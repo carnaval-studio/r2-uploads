@@ -48,7 +48,7 @@ class Local_Stream_Wrapper {
 		return $upload_dir['basedir'] . '/s3';
 	}
 
-	function setUri( string $uri ) {
+	function setUri( string $uri ) : void {
 		$this->uri = $uri;
 	}
 
@@ -74,10 +74,11 @@ class Local_Stream_Wrapper {
 	 */
 	protected function getTarget( $uri = null ) : string {
 		if ( ! isset( $uri ) ) {
-			$uri = $this->uri ?: '';
+			$uri = $this->uri ?? '';
 		}
 
-		list( $scheme, $target) = explode( '://', $uri, 2 );
+		$parts = explode( '://', $uri, 2 );
+		$target = $parts[1] ?? '';
 
 		// Remove erroneous leading or trailing, forward-slashes and backslashes.
 		return trim( $target, '\/' );
@@ -147,7 +148,7 @@ class Local_Stream_Wrapper {
 
 		$directory = realpath( $this->getDirectoryPath() );
 
-		if ( ! $directory || strpos( $realpath, $directory ) !== 0 ) {
+		if ( $directory === false || strpos( $realpath, $directory ) !== 0 ) {
 			return '';
 		}
 		return $realpath;
