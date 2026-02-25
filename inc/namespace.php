@@ -2,7 +2,7 @@
 
 namespace S3_Uploads;
 
-function init() {
+function init() : void {
 	// Ensure the AWS SDK can be loaded.
 	if ( ! class_exists( '\\Aws\\S3\\S3Client' ) ) {
 		trigger_error( 'S3 Uploads requires the AWS SDK. Ensure Composer dependencies have been loaded.', E_USER_WARNING );
@@ -40,8 +40,8 @@ function init() {
 	// switch out the personal_data directory to a local temp folder, and then upload after it's
 	// complete, as Core tries to write directly to the ZipArchive which won't work with the
 	// S3 streamWrapper.
-	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\\before_export_personal_data', 9 );
-	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\\after_export_personal_data', 11 );
+	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\\before_export_personal_data', 9, 0 );
+	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\\after_export_personal_data', 11, 0 );
 	add_action( 'wp_privacy_personal_data_export_file_created', __NAMESPACE__ . '\\move_temp_personal_data_to_s3', 1000 );
 }
 
@@ -55,7 +55,7 @@ function check_requirements() : bool {
 
 	if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
-			add_action( 'admin_notices', __NAMESPACE__ . '\\outdated_php_version_notice' );
+			add_action( 'admin_notices', __NAMESPACE__ . '\\outdated_php_version_notice', 10, 0 );
 		}
 
 		return false;
@@ -63,15 +63,15 @@ function check_requirements() : bool {
 
 	if ( version_compare( $wp_version, '5.3.0', '<' ) ) {
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
-			add_action( 'admin_notices', __NAMESPACE__ . '\\outdated_wp_version_notice' );
+			add_action( 'admin_notices', __NAMESPACE__ . '\\outdated_wp_version_notice', 10, 0 );
 		}
 
 		return false;
 	}
 
-	if ( ! ini_get( 'allow_url_fopen' ) ) {
+	if ( ini_get( 'allow_url_fopen' ) === false || ini_get( 'allow_url_fopen' ) === '' ) {
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
-			add_action( 'admin_notices', __NAMESPACE__ . '\\url_fopen_disabled_notice' );
+			add_action( 'admin_notices', __NAMESPACE__ . '\\url_fopen_disabled_notice', 10, 0 );
 		}
 
 		return false;
@@ -85,7 +85,7 @@ function check_requirements() : bool {
  *
  * This has to be a named function for compatibility with PHP 5.2.
  */
-function outdated_php_version_notice() {
+function outdated_php_version_notice() : void {
 	printf(
 		'<div class="error"><p>The S3 Uploads plugin requires PHP version 7.4 or higher. Your server is running PHP version %s.</p></div>',
 		PHP_VERSION
@@ -97,7 +97,7 @@ function outdated_php_version_notice() {
  *
  * This has to be a named function for compatibility with PHP 5.2.
  */
-function url_fopen_disabled_notice() {
+function url_fopen_disabled_notice() : void {
 	printf( '<div class="error"><p>The S3 Uploads plugin requires PHP option allow_url_fopen to be enabled. <a href="%s" target="_blank" rel="noopener noreferrer">Learn more</a>.</p></div>',
 		'https://www.php.net/manual/en/filesystem.configuration.php#ini.allow-url-fopen'
 	);
@@ -108,7 +108,7 @@ function url_fopen_disabled_notice() {
  *
  * This has to be a named function for compatibility with PHP 5.2.
  */
-function outdated_wp_version_notice() {
+function outdated_wp_version_notice() : void {
 	global $wp_version;
 
 	printf(
@@ -139,14 +139,14 @@ function enabled() : bool {
 /**
  * Setup the filters for wp_privacy_exports_dir to use a temp folder location.
  */
-function before_export_personal_data() {
+function before_export_personal_data() : void {
 	add_filter( 'wp_privacy_exports_dir', __NAMESPACE__ . '\\set_wp_privacy_exports_dir' );
 }
 
 /**
  * Remove the filters for wp_privacy_exports_dir as we only want it added in some cases.
  */
-function after_export_personal_data() {
+function after_export_personal_data() : void {
 	remove_filter( 'wp_privacy_exports_dir', __NAMESPACE__ . '\\set_wp_privacy_exports_dir' );
 }
 
@@ -180,7 +180,7 @@ function set_wp_privacy_exports_dir( string $dir ) {
  * location to the S3 location where it should have been stored all along, and where
  * the "natural" Core URL is going to be pointing to.
  */
-function move_temp_personal_data_to_s3( string $archive_pathname ) {
+function move_temp_personal_data_to_s3( string $archive_pathname ) : void {
 	if ( strpos( $archive_pathname, get_temp_dir() ) !== 0 ) {
 		return;
 	}

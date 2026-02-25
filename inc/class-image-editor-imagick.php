@@ -47,13 +47,13 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 			return true;
 		}
 
-		if ( $this->file && ! is_file( $this->file ) && ! preg_match( '|^https?://|', $this->file ) ) {
+		if ( $this->file !== null && $this->file !== '' && ! is_file( $this->file ) && ! preg_match( '|^https?://|', $this->file ) ) {
 			return new WP_Error( 'error_loading_image', __( 'File doesn&#8217;t exist?' ), $this->file );
 		}
 
 		$upload_dir = wp_upload_dir();
 
-		if ( ! $this->file || strpos( $this->file, $upload_dir['basedir'] ) !== 0 ) {
+		if ( $this->file === null || $this->file === '' || strpos( $this->file, $upload_dir['basedir'] ) !== 0 ) {
 			return parent::load();
 		}
 
@@ -81,11 +81,6 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 	 * @return WP_Error|array{path: string, file: string, width: int, height: int, mime-type: string}
 	 */
 	protected function _save( $image, $filename = null, $mime_type = null ) {
-		/**
-		 * @var ?string $filename
-		 * @var string $extension
-		 * @var string $mime_type
-		 */
 		list( $filename, $extension, $mime_type ) = $this->get_output_format( $filename, $mime_type );
 
 		if ( ! $filename ) {
@@ -95,7 +90,6 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 		$upload_dir = wp_upload_dir();
 
 		if ( strpos( $filename, $upload_dir['basedir'] ) === 0 ) {
-			/** @var false|string */
 			$temp_filename = tempnam( get_temp_dir(), 's3-uploads' );
 		} else {
 			$temp_filename = false;
@@ -104,25 +98,22 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 		/**
 		 * @var WP_Error|array{path: string, file: string, width: int, height: int, mime-type: string}
 		 */
-		$parent_call = parent::_save( $image, $temp_filename ?: $filename, $mime_type );
+		$parent_call = parent::_save( $image, $temp_filename !== false ? $temp_filename : $filename, $mime_type );
 
 		if ( is_wp_error( $parent_call ) ) {
-			if ( $temp_filename ) {
+			if ( $temp_filename !== false ) {
 				unlink( $temp_filename );
 			}
 
 			return $parent_call;
 		} else {
-			/**
-			 * @var array{path: string, file: string, width: int, height: int, mime-type: string} $save
-			 */
 			$save = $parent_call;
 		}
 
 		$copy_result = copy( $save['path'], $filename );
 
 		unlink( $save['path'] );
-		if ( $temp_filename ) {
+		if ( $temp_filename !== false ) {
 			unlink( $temp_filename );
 		}
 
