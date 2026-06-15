@@ -152,15 +152,10 @@ class Plugin {
 	}
 
 	/**
-	 * Register the stream wrapper for s3
+	 * Register the stream wrapper for R2's S3-compatible API.
 	 */
 	public function register_stream_wrapper() : void {
-		if ( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL ) {
-			stream_wrapper_register( 's3', 'R2_Uploads\Local_Stream_Wrapper', STREAM_IS_URL );
-		} else {
-			Stream_Wrapper::register( $this );
-		}
-
+		Stream_Wrapper::register( $this );
 		stream_context_set_option( stream_context_get_default(), 's3', 'seekable', true );
 	}
 
@@ -187,15 +182,8 @@ class Plugin {
 		$dirs['path']    = $s3_path . $dirs['subdir'];
 
 		if ( ! defined( 'R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) || ! R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) {
-
-			if ( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL ) {
-				$dirs['url']     = str_replace( $s3_path, $dirs['baseurl'] . '/s3/' . $this->bucket, $dirs['path'] );
-				$dirs['baseurl'] = str_replace( $s3_path, $dirs['baseurl'] . '/s3/' . $this->bucket, $dirs['basedir'] );
-
-			} else {
-				$dirs['baseurl'] = $this->get_s3_url();
-				$dirs['url']     = $this->get_s3_url() . $dirs['subdir'];
-			}
+			$dirs['baseurl'] = $this->get_s3_url();
+			$dirs['url']     = $this->get_s3_url() . $dirs['subdir'];
 		}
 
 		return $dirs;
@@ -325,15 +313,6 @@ class Plugin {
 	 * @return array{bucket: string, key: string, query: string|null}|null
 	 */
 	public function get_s3_location_for_url( string $url ) : ?array {
-		$s3_url = 'https://' . $this->get_s3_bucket() . '.s3.amazonaws.com/';
-		if ( strpos( $url, $s3_url ) === 0 ) {
-			$parsed = wp_parse_url( $url );
-			return [
-				'bucket' => $this->get_s3_bucket(),
-				'key'    => isset( $parsed['path'] ) ? ltrim( $parsed['path'], '/' ) : '',
-				'query'  => $parsed['query'] ?? null,
-			];
-		}
 		$upload_dir = wp_upload_dir();
 
 		if ( strpos( $url, $upload_dir['baseurl'] ) === false ) {
@@ -512,10 +491,7 @@ class Plugin {
 	 * @return array
 	 */
 	function wp_filter_resource_hints( array $hints, string $relation_type ) : array {
-		if (
-			( defined( 'R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) && R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) ||
-			( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL )
-		) {
+		if ( defined( 'R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) && R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) {
 			return $hints;
 		}
 

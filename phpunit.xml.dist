@@ -15,7 +15,6 @@
 			<file>./r2-uploads.php</file>
 		</include>
 		<exclude>
-			<directory suffix=".php">./lib</directory>
 			<file>./inc/class-wp-cli-command.php</file>
 		</exclude>
 	</coverage>
