@@ -27,7 +27,7 @@ class Test_R2_Uploads_Image_Editor_Imagick extends WP_UnitTestCase {
 		$path = $upload_dir['basedir'] . '/sunflower.jpg';
 		copy( $this->image_path, $path );
 
-		$image_editor = new S3_Uploads\Image_Editor_Imagick( $path );
+		$image_editor = new R2_Uploads\Image_Editor_Imagick( $path );
 
 		$image_editor->load();
 		$image_editor->resize( 100, 100, true );

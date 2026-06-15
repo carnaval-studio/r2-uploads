@@ -1,6 +1,6 @@
 <?php
 
-namespace S3_Uploads;
+namespace R2_Uploads;
 
 function init() : void {
 	// Ensure the AWS SDK can be loaded.
@@ -26,7 +26,7 @@ function init() : void {
 	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		\WP_CLI::add_command( 'r2-uploads', 'S3_Uploads\\WP_CLI_Command' );
+		\WP_CLI::add_command( 'r2-uploads', 'R2_Uploads\\WP_CLI_Command' );
 	}
 
 	$instance = Plugin::get_instance();

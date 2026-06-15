@@ -10,7 +10,7 @@ class Test_R2_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		stream_wrapper_unregister( 's3' );
-		S3_Uploads\Plugin::get_instance()->register_stream_wrapper();
+		R2_Uploads\Plugin::get_instance()->register_stream_wrapper();
 		parent::tearDown();
 	}
 
@@ -47,7 +47,7 @@ class Test_R2_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 		stream_wrapper_unregister( 's3' );
 
-		$uploads = new S3_Uploads\Plugin( R2_UPLOADS_BUCKET, R2_UPLOADS_KEY, '123', null, R2_UPLOADS_REGION );
+		$uploads = new R2_Uploads\Plugin( R2_UPLOADS_BUCKET, R2_UPLOADS_KEY, '123', null, R2_UPLOADS_REGION );
 		$uploads->register_stream_wrapper();
 
 		$bucket_root = strtok( R2_UPLOADS_BUCKET, '/' );
@@ -62,7 +62,7 @@ class Test_R2_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 		stream_wrapper_unregister( 's3' );
 
-		$uploads = new S3_Uploads\Plugin( R2_UPLOADS_BUCKET, R2_UPLOADS_KEY, '123', null, R2_UPLOADS_REGION );
+		$uploads = new R2_Uploads\Plugin( R2_UPLOADS_BUCKET, R2_UPLOADS_KEY, '123', null, R2_UPLOADS_REGION );
 		$uploads->register_stream_wrapper();
 
 		$bucket_root = strtok( R2_UPLOADS_BUCKET, '/' );

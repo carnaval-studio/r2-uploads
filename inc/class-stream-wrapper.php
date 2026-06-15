@@ -1,6 +1,6 @@
 <?php
 
-namespace S3_Uploads;
+namespace R2_Uploads;
 
 use Aws\CacheInterface;
 use Aws\LruArrayCache;

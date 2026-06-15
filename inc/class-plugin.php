@@ -1,10 +1,8 @@
 <?php
 
-namespace S3_Uploads;
+namespace R2_Uploads;
 
 use Aws;
-use Exception;
-use WP_Error;
 
 /**
  * @psalm-consistent-constructor
@@ -133,8 +131,6 @@ class Plugin {
 		add_filter( 'wp_get_attachment_image_src', [ $this, 'add_s3_signed_params_to_attachment_image_src' ], 10, 2 );
 		add_filter( 'wp_calculate_image_srcset', [ $this, 'add_s3_signed_params_to_attachment_image_srcset' ], 10, 5 );
 
-		add_filter( 'wp_generate_attachment_metadata', [ $this, 'set_attachment_private_on_generate_attachment_metadata' ], 10, 2 );
-
 		add_filter( 'pre_wp_unique_filename_file_list', [ $this, 'get_files_for_unique_filename_file_list' ], 10, 3 );
 	}
 
@@ -153,7 +149,6 @@ class Plugin {
 		remove_filter( 'wp_get_attachment_image_src', [ $this, 'add_s3_signed_params_to_attachment_image_src' ] );
 		remove_filter( 'wp_calculate_image_srcset', [ $this, 'add_s3_signed_params_to_attachment_image_srcset' ] );
 
-		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'set_attachment_private_on_generate_attachment_metadata' ] );
 	}
 
 	/**
@@ -161,7 +156,7 @@ class Plugin {
 	 */
 	public function register_stream_wrapper() : void {
 		if ( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL ) {
-			stream_wrapper_register( 's3', 'S3_Uploads\Local_Stream_Wrapper', STREAM_IS_URL );
+			stream_wrapper_register( 's3', 'R2_Uploads\Local_Stream_Wrapper', STREAM_IS_URL );
 		} else {
 			Stream_Wrapper::register( $this );
 		}
@@ -564,17 +559,6 @@ class Plugin {
 	}
 
 	/**
-	 * R2 does not support S3 object ACLs.
-	 *
-	 * @param integer $attachment_id
-	 * @param string $acl Ignored ACL value.
-	 * @return WP_Error|null
-	 */
-	public function set_attachment_files_acl( int $attachment_id, string $acl ) : ?WP_Error {
-		return new WP_Error( 'r2_uploads_acl_not_supported', 'Cloudflare R2 does not support S3 object ACLs. Use a public custom domain or presigned URLs instead.' );
-	}
-
-	/**
 	 * Get all the files stored for a given attachment.
 	 *
 	 * @param integer $attachment_id
@@ -678,17 +662,6 @@ class Plugin {
 			$source['url'] = $this->add_s3_signed_params_to_attachment_url( $source['url'], $post_id );
 		}
 		return $sources;
-	}
-
-	/**
-	 * Whenever attachment metadata is generated, set the attachment files to private if it's a private attachment.
-	 *
-	 * @param array $metadata    The attachment metadata.
-	 * @param int $attachment_id The attachment ID
-	 * @return array
-	 */
-	public function set_attachment_private_on_generate_attachment_metadata( array $metadata, int $attachment_id ) : array {
-		return $metadata;
 	}
 
 	/**

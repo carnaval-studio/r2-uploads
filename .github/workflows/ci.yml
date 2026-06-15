@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ master, v3-branch ]
+    branches: [ master ]
   pull_request:
 
 jobs:
@@ -16,9 +16,4 @@ jobs:
         run: docker run --rm -v $PWD:/code --entrypoint='' humanmade/plugin-tester:wp-6.8-php8.3 composer install --ignore-platform-reqs
 
       - name: Run tests
-        run: ./tests/run-tests.sh --coverage-clover=coverage.xml
-
-      - name: Upload coverage to Codecov
-        run: bash <(curl -s https://codecov.io/bash)
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: ./tests/run-tests.sh

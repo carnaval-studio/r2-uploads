@@ -1,6 +1,6 @@
 <?php
 
-namespace S3_Uploads;
+namespace R2_Uploads;
 
 use Aws\S3\Transfer;
 use Exception;
@@ -57,19 +57,6 @@ class WP_CLI_Command extends \WP_CLI_Command {
 		WP_CLI::print_value( 'File deleted from R2 successfully.' );
 
 		WP_CLI::success( 'Looks like your configuration is correct.' );
-	}
-
-	/**
-	 * Explain how R2 credentials are configured.
-	 *
-	 * It's typically not a good idea to use access keys that have full access to your S3 account,
-	 * as if the keys are compromised through the WordPress site somehow, you don't
-	 * want to give full control via those keys.
-	 *
-	 * @subcommand generate-iam-policy
-	 */
-	public function generate_iam_policy() : void {
-		WP_CLI::error( 'R2 Uploads uses Cloudflare R2 API tokens. Create an Object Read & Write token scoped to your bucket in the Cloudflare dashboard.' );
 	}
 
 	/**
@@ -237,21 +224,6 @@ class WP_CLI_Command extends \WP_CLI_Command {
 	 */
 	public function get_attachment_files( array $args ) : void {
 		WP_CLI::print_value( Plugin::get_attachment_files( $args[0] ) );
-	}
-
-	/**
-	 * S3 object ACLs are not supported by Cloudflare R2.
-	 *
-	 * Useful for debugging.
-	 *
-	 * @subcommand set-attachment-acl
-	 * @synopsis <attachment-id> <acl>
-	 *
-	 * @param array{0: int, 1: string} $args
-	 */
-	public function set_attachment_acl( array $args ) : void {
-		$result = Plugin::get_instance()->set_attachment_files_acl( $args[0], $args[1] );
-		WP_CLI::print_value( $result );
 	}
 
 	private function recurse_copy( string $src, string $dst ) : void {

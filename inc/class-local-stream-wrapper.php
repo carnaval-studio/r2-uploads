@@ -1,6 +1,6 @@
 <?php
 
-namespace S3_Uploads;
+namespace R2_Uploads;
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.MemberNotSnakeCase
 // phpcs:disable WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid

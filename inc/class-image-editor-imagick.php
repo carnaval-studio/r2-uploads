@@ -1,6 +1,6 @@
 <?php
 
-namespace S3_Uploads;
+namespace R2_Uploads;
 
 use Imagick;
 use WP_Error;
@@ -118,7 +118,7 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 		}
 
 		if ( ! $copy_result ) {
-			return new WP_Error( 'unable-to-copy-to-s3', 'Unable to copy the temp image to S3' );
+			return new WP_Error( 'unable-to-copy-to-r2', 'Unable to copy the temp image to R2' );
 		}
 
 		$response = [

@@ -8,12 +8,12 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 		parent::setUp();
 
 		// start the tests with nothing added
-		S3_Uploads\Plugin::get_instance()->tear_down();
+		R2_Uploads\Plugin::get_instance()->tear_down();
 	}
 
 	public function tearDown(): void {
 		// reenable for other tests
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		parent::tearDown();
 	}
 
@@ -22,14 +22,14 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	 */
 	public function test_setup() {
 
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 
-		$this->assertEquals( 10, has_action( 'upload_dir', array( S3_Uploads\Plugin::get_instance(), 'filter_upload_dir' ) ) );
-		$this->assertEquals( 9, has_action( 'wp_image_editors', array( S3_Uploads\Plugin::get_instance(), 'filter_editors' ) ) );
-		$this->assertEquals( 10, has_action( 'wp_handle_sideload_prefilter', array( S3_Uploads\Plugin::get_instance(), 'filter_sideload_move_temp_file_to_s3' ) ) );
+		$this->assertEquals( 10, has_action( 'upload_dir', array( R2_Uploads\Plugin::get_instance(), 'filter_upload_dir' ) ) );
+		$this->assertEquals( 9, has_action( 'wp_image_editors', array( R2_Uploads\Plugin::get_instance(), 'filter_editors' ) ) );
+		$this->assertEquals( 10, has_action( 'wp_handle_sideload_prefilter', array( R2_Uploads\Plugin::get_instance(), 'filter_sideload_move_temp_file_to_s3' ) ) );
 
 		$this->assertTrue( in_array( 's3', stream_get_wrappers() ) );
-		S3_Uploads\Plugin::get_instance()->tear_down();
+		R2_Uploads\Plugin::get_instance()->tear_down();
 	}
 
 	/**
@@ -37,41 +37,41 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	 */
 	public function test_tear_down() {
 
-		S3_Uploads\Plugin::get_instance()->setup();
-		S3_Uploads\Plugin::get_instance()->tear_down();
+		R2_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->tear_down();
 
-		$this->assertFalse( has_action( 'upload_dir', array( S3_Uploads\Plugin::get_instance(), 'filter_upload_dir' ) ) );
-		$this->assertFalse( has_action( 'wp_image_editors', array( S3_Uploads\Plugin::get_instance(), 'filter_editors' ) ) );
-		$this->assertFalse( has_action( 'wp_handle_sideload_prefilter', array( S3_Uploads\Plugin::get_instance(), 'filter_sideload_move_temp_file_to_s3' ) ) );
+		$this->assertFalse( has_action( 'upload_dir', array( R2_Uploads\Plugin::get_instance(), 'filter_upload_dir' ) ) );
+		$this->assertFalse( has_action( 'wp_image_editors', array( R2_Uploads\Plugin::get_instance(), 'filter_editors' ) ) );
+		$this->assertFalse( has_action( 'wp_handle_sideload_prefilter', array( R2_Uploads\Plugin::get_instance(), 'filter_sideload_move_temp_file_to_s3' ) ) );
 
 		$this->assertFalse( in_array( 's3', stream_get_wrappers() ) );
 	}
 
 	public function test_r2_uploads_enabled() {
 
-		$this->assertTrue( S3_Uploads\enabled() );
+		$this->assertTrue( R2_Uploads\enabled() );
 
 		update_option( 'r2_uploads_enabled', 'enabled' );
-		$this->assertTrue( S3_Uploads\enabled() );
+		$this->assertTrue( R2_Uploads\enabled() );
 
 		delete_option( 'r2_uploads_enabled' );
 		define( 'R2_UPLOADS_AUTOENABLE', false );
 
-		$this->assertFalse( S3_Uploads\enabled() );
+		$this->assertFalse( R2_Uploads\enabled() );
 
 		update_option( 'r2_uploads_enabled', 'enabled' );
-		$this->assertTrue( S3_Uploads\enabled() );
+		$this->assertTrue( R2_Uploads\enabled() );
 	}
 
 	public function test_get_s3_client() {
 
-		$s3 = S3_Uploads\Plugin::get_instance()->s3();
+		$s3 = R2_Uploads\Plugin::get_instance()->s3();
 
 		$this->assertInstanceOf( 'Aws\\S3\\S3Client', $s3 );
 	}
 
 	public function test_generate_attachment_metadata() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', $upload_dir['path'] . '/sunflower.jpg' );
 		$test_file = $upload_dir['path'] . '/sunflower.jpg';
@@ -97,7 +97,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	}
 
 	public function test_generate_attachment_metadata_for_mp4() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/video.m4v', $upload_dir['path'] . '/video.m4v' );
 		$test_file = $upload_dir['path'] . '/video.m4v';
@@ -114,7 +114,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	}
 
 	public function test_image_sizes_are_deleted_on_attachment_delete() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', $upload_dir['path'] . '/sunflower.jpg' );
 		$test_file = $upload_dir['path'] . '/sunflower.jpg';
@@ -136,7 +136,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	}
 
 	public function test_generate_attachment_metadata_for_pdf() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/gdpr.pdf', $upload_dir['path'] . '/gdpr.pdf' );
 		$test_file = $upload_dir['path'] . '/gdpr.pdf';
@@ -161,20 +161,20 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 
 	function test_get_r2_bucket_location() {
 
-		$uploads = new S3_Uploads\Plugin( 'hmn-uploads', R2_UPLOADS_KEY, R2_UPLOADS_SECRET, null, R2_UPLOADS_REGION );
+		$uploads = new R2_Uploads\Plugin( 'hmn-uploads', R2_UPLOADS_KEY, R2_UPLOADS_SECRET, null, R2_UPLOADS_REGION );
 
 		$region = $uploads->get_s3_bucket_region();
 		$this->assertEquals( 'auto', $region );
 	}
 
 	function test_get_r2_bucket() {
-		$uploads = new S3_Uploads\Plugin( 'hmn-uploads/something', R2_UPLOADS_KEY, R2_UPLOADS_SECRET, null, R2_UPLOADS_REGION );
+		$uploads = new R2_Uploads\Plugin( 'hmn-uploads/something', R2_UPLOADS_KEY, R2_UPLOADS_SECRET, null, R2_UPLOADS_REGION );
 
 		$this->assertEquals( 'hmn-uploads', $uploads->get_s3_bucket() );
 	}
 
 	function test_wp_unique_filename() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 
 		file_put_contents( $upload_dir['path'] . '/my-file-scaled.jpg', '' );
@@ -186,7 +186,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	}
 
 	function test_get_attachment_files() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', $upload_dir['path'] . '/sunflower.jpg' );
 		$test_file = $upload_dir['path'] . '/sunflower.jpg';
@@ -195,14 +195,14 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 			'post_excerpt'   => 'A sample caption',
 		) );
 
-		$files = S3_Uploads\Plugin::get_instance()->get_attachment_files( $attachment_id );
+		$files = R2_Uploads\Plugin::get_instance()->get_attachment_files( $attachment_id );
 		$this->assertIsArray( $files );
 		$this->assertNotEmpty( $files );
 		$this->assertContains( $upload_dir['path'] . '/sunflower.jpg', $files );
 	}
 
 	function test_get_attachment_files_intermediate_sizes() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', $upload_dir['path'] . '/sunflower.jpg' );
 		$test_file = $upload_dir['path'] . '/sunflower.jpg';
@@ -214,7 +214,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 		// Generate metadata to create intermediate sizes
 		wp_generate_attachment_metadata( $attachment_id, $test_file );
 
-		$files = S3_Uploads\Plugin::get_instance()->get_attachment_files( $attachment_id );
+		$files = R2_Uploads\Plugin::get_instance()->get_attachment_files( $attachment_id );
 		$this->assertIsArray( $files );
 		$this->assertNotEmpty( $files );
 		$this->assertContains( $upload_dir['path'] . '/sunflower-300x196.jpg', $files );
@@ -222,7 +222,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 	}
 
 	function test_get_attachment_files_intermediate_sizes_in_subdir() {
-		S3_Uploads\Plugin::get_instance()->setup();
+		R2_Uploads\Plugin::get_instance()->setup();
 		$upload_dir = wp_upload_dir();
 		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', $upload_dir['path'] . '/a/sub/dir/sunflower.jpg' );
 		$test_file = $upload_dir['path'] . '/a/sub/dir/sunflower.jpg';
@@ -234,7 +234,7 @@ class Test_R2_Uploads extends WP_UnitTestCase {
 		// Generate metadata to create intermediate sizes
 		wp_generate_attachment_metadata( $attachment_id, $test_file );
 
-		$files = S3_Uploads\Plugin::get_instance()->get_attachment_files( $attachment_id );
+		$files = R2_Uploads\Plugin::get_instance()->get_attachment_files( $attachment_id );
 		$this->assertIsArray( $files );
 		$this->assertNotEmpty( $files );
 		$this->assertContains( $upload_dir['path'] . '/a/sub/dir/sunflower.jpg', $files );
