@@ -1,6 +1,6 @@
 <?php
 
-class Test_S3_Uploads extends WP_UnitTestCase {
+class Test_R2_Uploads extends WP_UnitTestCase {
 
 	protected $s3 = null;
 
@@ -47,19 +47,19 @@ class Test_S3_Uploads extends WP_UnitTestCase {
 		$this->assertFalse( in_array( 's3', stream_get_wrappers() ) );
 	}
 
-	public function test_s3_uploads_enabled() {
+	public function test_r2_uploads_enabled() {
 
 		$this->assertTrue( S3_Uploads\enabled() );
 
-		update_option( 's3_uploads_enabled', 'enabled' );
+		update_option( 'r2_uploads_enabled', 'enabled' );
 		$this->assertTrue( S3_Uploads\enabled() );
 
-		delete_option( 's3_uploads_enabled' );
-		define( 'S3_UPLOADS_AUTOENABLE', false );
+		delete_option( 'r2_uploads_enabled' );
+		define( 'R2_UPLOADS_AUTOENABLE', false );
 
 		$this->assertFalse( S3_Uploads\enabled() );
 
-		update_option( 's3_uploads_enabled', 'enabled' );
+		update_option( 'r2_uploads_enabled', 'enabled' );
 		$this->assertTrue( S3_Uploads\enabled() );
 	}
 
@@ -159,16 +159,16 @@ class Test_S3_Uploads extends WP_UnitTestCase {
 		$this->assertTrue( file_exists( $wp_upload_dir['path'] . '/gdpr-pdf-106x150.jpg' ) );
 	}
 
-	function test_get_s3_bucket_location() {
+	function test_get_r2_bucket_location() {
 
-		$uploads = new S3_Uploads\Plugin( 'hmn-uploads', S3_UPLOADS_KEY, S3_UPLOADS_SECRET, null, S3_UPLOADS_REGION );
+		$uploads = new S3_Uploads\Plugin( 'hmn-uploads', R2_UPLOADS_KEY, R2_UPLOADS_SECRET, null, R2_UPLOADS_REGION );
 
 		$region = $uploads->get_s3_bucket_region();
-		$this->assertEquals( 'us-east-1', $region );
+		$this->assertEquals( 'auto', $region );
 	}
 
-	function test_get_s3_bucket() {
-		$uploads = new S3_Uploads\Plugin( 'hmn-uploads/something', S3_UPLOADS_KEY, S3_UPLOADS_SECRET, null, S3_UPLOADS_REGION );
+	function test_get_r2_bucket() {
+		$uploads = new S3_Uploads\Plugin( 'hmn-uploads/something', R2_UPLOADS_KEY, R2_UPLOADS_SECRET, null, R2_UPLOADS_REGION );
 
 		$this->assertEquals( 'hmn-uploads', $uploads->get_s3_bucket() );
 	}

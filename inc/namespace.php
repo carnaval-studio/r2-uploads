@@ -5,7 +5,7 @@ namespace S3_Uploads;
 function init() : void {
 	// Ensure the AWS SDK can be loaded.
 	if ( ! class_exists( '\\Aws\\S3\\S3Client' ) ) {
-		trigger_error( 'S3 Uploads requires the AWS SDK. Ensure Composer dependencies have been loaded.', E_USER_WARNING );
+		trigger_error( 'R2 Uploads requires the AWS SDK. Ensure Composer dependencies have been loaded.', E_USER_WARNING );
 		return;
 	}
 
@@ -13,11 +13,11 @@ function init() : void {
 		return;
 	}
 
-	if ( ! defined( 'S3_UPLOADS_BUCKET' ) ) {
+	if ( ! defined( 'R2_UPLOADS_BUCKET' ) ) {
 		return;
 	}
 
-	if ( ( ! defined( 'S3_UPLOADS_KEY' ) || ! defined( 'S3_UPLOADS_SECRET' ) ) && ! defined( 'S3_UPLOADS_USE_INSTANCE_PROFILE' ) ) {
+	if ( ! defined( 'R2_UPLOADS_ACCOUNT_ID' ) || ! defined( 'R2_UPLOADS_KEY' ) || ! defined( 'R2_UPLOADS_SECRET' ) ) {
 		return;
 	}
 
@@ -25,12 +25,8 @@ function init() : void {
 		return;
 	}
 
-	if ( ! defined( 'S3_UPLOADS_REGION' ) ) {
-		wp_die( 'S3_UPLOADS_REGION constant is required. Please define it in your wp-config.php' );
-	}
-
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		\WP_CLI::add_command( 's3-uploads', 'S3_Uploads\\WP_CLI_Command' );
+		\WP_CLI::add_command( 'r2-uploads', 'S3_Uploads\\WP_CLI_Command' );
 	}
 
 	$instance = Plugin::get_instance();
@@ -39,7 +35,7 @@ function init() : void {
 	// Add filters to "wrap" the wp_privacy_personal_data_export_file function call as we need to
 	// switch out the personal_data directory to a local temp folder, and then upload after it's
 	// complete, as Core tries to write directly to the ZipArchive which won't work with the
-	// S3 streamWrapper.
+	// R2 stream wrapper.
 	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\\before_export_personal_data', 9, 0 );
 	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\\after_export_personal_data', 11, 0 );
 	add_action( 'wp_privacy_personal_data_export_file_created', __NAMESPACE__ . '\\move_temp_personal_data_to_s3', 1000 );
@@ -87,7 +83,7 @@ function check_requirements() : bool {
  */
 function outdated_php_version_notice() : void {
 	printf(
-		'<div class="error"><p>The S3 Uploads plugin requires PHP version 7.4 or higher. Your server is running PHP version %s.</p></div>',
+		'<div class="error"><p>The R2 Uploads plugin requires PHP version 7.4 or higher. Your server is running PHP version %s.</p></div>',
 		PHP_VERSION
 	);
 }
@@ -98,7 +94,7 @@ function outdated_php_version_notice() : void {
  * This has to be a named function for compatibility with PHP 5.2.
  */
 function url_fopen_disabled_notice() : void {
-	printf( '<div class="error"><p>The S3 Uploads plugin requires PHP option allow_url_fopen to be enabled. <a href="%s" target="_blank" rel="noopener noreferrer">Learn more</a>.</p></div>',
+	printf( '<div class="error"><p>The R2 Uploads plugin requires PHP option allow_url_fopen to be enabled. <a href="%s" target="_blank" rel="noopener noreferrer">Learn more</a>.</p></div>',
 		'https://www.php.net/manual/en/filesystem.configuration.php#ini.allow-url-fopen'
 	);
 }
@@ -112,7 +108,7 @@ function outdated_wp_version_notice() : void {
 	global $wp_version;
 
 	printf(
-		'<div class="error"><p>The S3 Uploads plugin requires WordPress version 5.3 or higher. Your server is running WordPress version %s.</p></div>',
+		'<div class="error"><p>The R2 Uploads plugin requires WordPress version 5.3 or higher. Your server is running WordPress version %s.</p></div>',
 		esc_html( $wp_version )
 	);
 }
@@ -120,16 +116,16 @@ function outdated_wp_version_notice() : void {
 /**
  * Check if URL rewriting is enabled.
  *
- * Define S3_UPLOADS_AUTOENABLE to false in your wp-config to disable, or use the
- * s3_uploads_enabled option.
+ * Define R2_UPLOADS_AUTOENABLE to false in your wp-config to disable, or use the
+ * r2_uploads_enabled option.
  *
  * @return bool
  */
 function enabled() : bool {
 	// Make sure the plugin is enabled when autoenable is on
-	$constant_autoenable_off = ( defined( 'S3_UPLOADS_AUTOENABLE' ) && false === S3_UPLOADS_AUTOENABLE );
+	$constant_autoenable_off = ( defined( 'R2_UPLOADS_AUTOENABLE' ) && false === R2_UPLOADS_AUTOENABLE );
 
-	if ( $constant_autoenable_off && 'enabled' !== get_option( 's3_uploads_enabled' ) ) { // If the plugin is not enabled, skip
+	if ( $constant_autoenable_off && 'enabled' !== get_option( 'r2_uploads_enabled' ) ) { // If the plugin is not enabled, skip
 		return false;
 	}
 

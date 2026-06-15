@@ -2,7 +2,6 @@
 
 namespace S3_Uploads;
 
-use Aws\Command;
 use Aws\S3\Transfer;
 use Exception;
 use WP_CLI;
@@ -15,19 +14,19 @@ class WP_CLI_Command extends \WP_CLI_Command {
 	 * @subcommand verify
 	 */
 	public function verify_api_keys() : void {
-		// Verify first that we have the necessary access keys to connect to S3.
+		// Verify first that we have the necessary access keys to connect to R2.
 		if ( ! $this->verify_s3_access_constants() ) {
 			return;
 		}
 
-		// Get S3 Upload instance.
+		// Get R2 Uploads instance.
 		Plugin::get_instance();
 
 		// Create a path in the base directory, with a random file name to avoid potentially overwriting existing data.
 		$upload_dir = wp_upload_dir();
 		$s3_path = $upload_dir['basedir'] . '/' . wp_rand() . '.txt';
 
-		// Attempt to copy the local Canola test file to the generated path on S3.
+		// Attempt to copy the local test file to the generated path on R2.
 		WP_CLI::print_value( 'Attempting to upload file ' . $s3_path );
 
 		$copy = copy(
@@ -37,14 +36,14 @@ class WP_CLI_Command extends \WP_CLI_Command {
 
 		// Check that the copy worked.
 		if ( ! $copy ) {
-			WP_CLI::error( 'Failed to copy / write to S3 - check your policy?' );
+			WP_CLI::error( 'Failed to copy / write to R2 - check your token permissions?' );
 
 			return;
 		}
 
-		WP_CLI::print_value( 'File uploaded to S3 successfully.' );
+		WP_CLI::print_value( 'File uploaded to R2 successfully.' );
 
-		// Delete the file off S3.
+		// Delete the file off R2.
 		WP_CLI::print_value( 'Attempting to delete file. ' . $s3_path );
 		$delete = unlink( $s3_path );
 
@@ -55,58 +54,13 @@ class WP_CLI_Command extends \WP_CLI_Command {
 			return;
 		}
 
-		WP_CLI::print_value( 'File deleted from S3 successfully.' );
+		WP_CLI::print_value( 'File deleted from R2 successfully.' );
 
 		WP_CLI::success( 'Looks like your configuration is correct.' );
 	}
 
-	private function get_iam_policy() : string {
-
-		$bucket = strtok( S3_UPLOADS_BUCKET, '/' );
-
-		$path = null;
-
-		if ( strpos( S3_UPLOADS_BUCKET, '/' ) !== false ) {
-			$path = str_replace( strtok( S3_UPLOADS_BUCKET, '/' ) . '/', '', S3_UPLOADS_BUCKET );
-		}
-
-		return '{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "Stmt1392016154000",
-      "Effect": "Allow",
-      "Action": [
-        "s3:AbortMultipartUpload",
-        "s3:DeleteObject",
-        "s3:GetBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:GetBucketPolicy",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:ListBucket",
-        "s3:ListBucketMultipartUploads",
-        "s3:ListMultipartUploadParts",
-        "s3:PutObject",
-        "s3:PutObjectAcl"
-      ],
-      "Resource": [
-        "arn:aws:s3:::' . S3_UPLOADS_BUCKET . '/*"
-      ]
-    },
-    {
-      "Sid": "AllowRootAndHomeListingOfBucket",
-      "Action": ["s3:ListBucket"],
-      "Effect": "Allow",
-      "Resource": ["arn:aws:s3:::' . $bucket . '"],
-      "Condition":{"StringLike":{"s3:prefix":["' . ( $path !== null ? $path . '/' : '' ) . '*"]}}
-    }
-  ]
-}';
-	}
-
 	/**
-	 * Create AWS IAM Policy that S3 Uploads requires
+	 * Explain how R2 credentials are configured.
 	 *
 	 * It's typically not a good idea to use access keys that have full access to your S3 account,
 	 * as if the keys are compromised through the WordPress site somehow, you don't
@@ -115,9 +69,7 @@ class WP_CLI_Command extends \WP_CLI_Command {
 	 * @subcommand generate-iam-policy
 	 */
 	public function generate_iam_policy() : void {
-
-		WP_Cli::print_value( $this->get_iam_policy() );
-
+		WP_CLI::error( 'R2 Uploads uses Cloudflare R2 API tokens. Create an Object Read & Write token scoped to your bucket in the Cloudflare dashboard.' );
 	}
 
 	/**
@@ -131,11 +83,7 @@ class WP_CLI_Command extends \WP_CLI_Command {
 
 		$s3 = Plugin::get_instance()->s3();
 
-		$prefix = '';
-
-		if ( strpos( S3_UPLOADS_BUCKET, '/' ) !== false ) {
-			$prefix = trailingslashit( str_replace( strtok( S3_UPLOADS_BUCKET, '/' ) . '/', '', S3_UPLOADS_BUCKET ) );
-		}
+		$prefix = $this->get_bucket_prefix();
 
 		if ( isset( $args[0] ) ) {
 			$prefix .= trailingslashit( ltrim( $args[0], '/' ) );
@@ -144,7 +92,7 @@ class WP_CLI_Command extends \WP_CLI_Command {
 		try {
 			$objects = $s3->getIterator(
 				'ListObjectsV2', [
-					'Bucket' => strtok( S3_UPLOADS_BUCKET, '/' ),
+					'Bucket' => R2_UPLOADS_BUCKET,
 					'Prefix' => $prefix,
 				]
 			);
@@ -207,15 +155,9 @@ class WP_CLI_Command extends \WP_CLI_Command {
 		$transfer_args = [
 			'concurrency' => $args_assoc['concurrency'],
 			'debug'       => (bool) $args_assoc['verbose'],
-			'before'      => function ( Command $command ) : void {
-				if ( in_array( $command->getName(), [ 'PutObject', 'CreateMultipartUpload' ], true ) ) {
-					$acl = defined( 'S3_UPLOADS_OBJECT_ACL' ) ? S3_UPLOADS_OBJECT_ACL : 'public-read';
-					$command['ACL'] = $acl;
-				}
-			},
 		];
 		try {
-			$manager = new Transfer( $s3, $from, 's3://' . S3_UPLOADS_BUCKET . '/' . $to, $transfer_args );
+			$manager = new Transfer( $s3, $from, 's3://' . $this->get_bucket_with_prefix() . '/' . $to, $transfer_args );
 			$manager->transfer();
 		} catch ( Exception $e ) {
 			WP_CLI::error( $e->getMessage() );
@@ -234,12 +176,8 @@ class WP_CLI_Command extends \WP_CLI_Command {
 
 		$s3 = Plugin::get_instance()->s3();
 
-		$prefix = '';
+		$prefix = $this->get_bucket_prefix();
 		$regex = isset( $args_assoc['regex'] ) ? $args_assoc['regex'] : '';
-
-		if ( strpos( S3_UPLOADS_BUCKET, '/' ) !== false ) {
-			$prefix = trailingslashit( str_replace( strtok( S3_UPLOADS_BUCKET, '/' ) . '/', '', S3_UPLOADS_BUCKET ) );
-		}
 
 		if ( isset( $args[0] ) ) {
 			$prefix .= ltrim( $args[0], '/' );
@@ -251,7 +189,7 @@ class WP_CLI_Command extends \WP_CLI_Command {
 
 		try {
 			$s3->deleteMatchingObjects(
-				strtok( S3_UPLOADS_BUCKET, '/' ),
+				R2_UPLOADS_BUCKET,
 				$prefix,
 				$regex,
 				[
@@ -270,19 +208,19 @@ class WP_CLI_Command extends \WP_CLI_Command {
 	}
 
 	/**
-	 * Enable the auto-rewriting of media links to S3
+	 * Enable the auto-rewriting of media links to R2.
 	 */
 	public function enable() : void {
-		update_option( 's3_uploads_enabled', 'enabled' );
+		update_option( 'r2_uploads_enabled', 'enabled' );
 
 		WP_CLI::success( 'Media URL rewriting enabled.' );
 	}
 
 	/**
-	 * Disable the auto-rewriting of media links to S3
+	 * Disable the auto-rewriting of media links to R2.
 	 */
 	public function disable() : void {
-		delete_option( 's3_uploads_enabled' );
+		delete_option( 'r2_uploads_enabled' );
 
 		WP_CLI::success( 'Media URL rewriting disabled.' );
 	}
@@ -302,14 +240,14 @@ class WP_CLI_Command extends \WP_CLI_Command {
 	}
 
 	/**
-	 * Update the ACL of all files for an attachment.
+	 * S3 object ACLs are not supported by Cloudflare R2.
 	 *
 	 * Useful for debugging.
 	 *
 	 * @subcommand set-attachment-acl
 	 * @synopsis <attachment-id> <acl>
 	 *
-	 * @param array{0: int, 1: 'public-read'|'private'} $args
+	 * @param array{0: int, 1: string} $args
 	 */
 	public function set_attachment_acl( array $args ) : void {
 		$result = Plugin::get_instance()->set_attachment_files_acl( $args[0], $args[1] );
@@ -333,19 +271,17 @@ class WP_CLI_Command extends \WP_CLI_Command {
 	}
 
 	/**
-	 * Verify that the required constants for the S3 connections are set.
+	 * Verify that the required constants for the R2 connection are set.
 	 *
 	 * @return bool true if all constants are set, else false.
 	 */
 	private function verify_s3_access_constants() {
 		$required_constants = [
-			'S3_UPLOADS_BUCKET',
+			'R2_UPLOADS_BUCKET',
+			'R2_UPLOADS_ACCOUNT_ID',
+			'R2_UPLOADS_KEY',
+			'R2_UPLOADS_SECRET',
 		];
-
-		// Credentials do not need to be set when using AWS Instance Profiles.
-		if ( ! defined( 'S3_UPLOADS_USE_INSTANCE_PROFILE' ) || ! S3_UPLOADS_USE_INSTANCE_PROFILE ) {
-			array_push( $required_constants, 'S3_UPLOADS_KEY', 'S3_UPLOADS_SECRET' );
-		}
 
 		$all_set = true;
 		foreach ( $required_constants as $constant ) {
@@ -356,5 +292,16 @@ class WP_CLI_Command extends \WP_CLI_Command {
 		}
 
 		return $all_set;
+	}
+
+	private function get_bucket_prefix() : string {
+		return defined( 'R2_UPLOADS_BUCKET_PATH_PREFIX' ) && R2_UPLOADS_BUCKET_PATH_PREFIX !== ''
+			? trailingslashit( trim( R2_UPLOADS_BUCKET_PATH_PREFIX, '/' ) )
+			: '';
+	}
+
+	private function get_bucket_with_prefix() : string {
+		$prefix = trim( $this->get_bucket_prefix(), '/' );
+		return $prefix !== '' ? R2_UPLOADS_BUCKET . '/' . $prefix : R2_UPLOADS_BUCKET;
 	}
 }

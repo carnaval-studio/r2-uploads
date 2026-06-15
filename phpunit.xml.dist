@@ -5,18 +5,18 @@
 	>
 	<testsuites>
 			<!-- Default test suite to run all tests -->
-			<testsuite name="S3_Uploads">
+			<testsuite name="R2_Uploads">
 					<directory prefix="test-" suffix=".php">tests</directory>
 			</testsuite>
 	</testsuites>
 	<coverage>
 		<include>
 			<directory suffix=".php">./inc</directory>
-			<file>./s3-uploads.php</file>
+			<file>./r2-uploads.php</file>
 		</include>
 		<exclude>
 			<directory suffix=".php">./lib</directory>
-			<file>./inc/class-s3-uploads-wp-cli-command.php</file>
+			<file>./inc/class-wp-cli-command.php</file>
 		</exclude>
 	</coverage>
 </phpunit>

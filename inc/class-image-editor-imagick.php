@@ -57,7 +57,7 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 			return parent::load();
 		}
 
-		$temp_filename = tempnam( get_temp_dir(), 's3-uploads' );
+		$temp_filename = tempnam( get_temp_dir(), 'r2-uploads' );
 		$this->temp_files_to_cleanup[] = $temp_filename;
 
 		copy( $this->file, $temp_filename );
@@ -90,7 +90,7 @@ class Image_Editor_Imagick extends WP_Image_Editor_Imagick {
 		$upload_dir = wp_upload_dir();
 
 		if ( strpos( $filename, $upload_dir['basedir'] ) === 0 ) {
-			$temp_filename = tempnam( get_temp_dir(), 's3-uploads' );
+			$temp_filename = tempnam( get_temp_dir(), 'r2-uploads' );
 		} else {
 			$temp_filename = false;
 		}

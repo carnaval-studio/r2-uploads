@@ -40,6 +40,13 @@ class Plugin {
 	private $secret;
 
 	/**
+	 * Cloudflare account ID used to build the R2 S3-compatible endpoint.
+	 *
+	 * @var ?string
+	 */
+	private $account_id;
+
+	/**
 	 * Original wp_upload_dir() before being replaced by S3 Uploads.
 	 *
 	 * @var ?array{path: string, basedir: string, baseurl: string, url: string, subdir: string, error: string|false}
@@ -69,11 +76,12 @@ class Plugin {
 
 		if ( ! self::$instance ) {
 			self::$instance = new static(
-				S3_UPLOADS_BUCKET,
-				defined( 'S3_UPLOADS_KEY' ) ? S3_UPLOADS_KEY : null,
-				defined( 'S3_UPLOADS_SECRET' ) ? S3_UPLOADS_SECRET : null,
-				defined( 'S3_UPLOADS_BUCKET_URL' ) ? S3_UPLOADS_BUCKET_URL : null,
-				S3_UPLOADS_REGION
+				self::get_configured_bucket(),
+				defined( 'R2_UPLOADS_KEY' ) ? R2_UPLOADS_KEY : null,
+				defined( 'R2_UPLOADS_SECRET' ) ? R2_UPLOADS_SECRET : null,
+				defined( 'R2_UPLOADS_PUBLIC_URL' ) ? R2_UPLOADS_PUBLIC_URL : null,
+				defined( 'R2_UPLOADS_REGION' ) ? R2_UPLOADS_REGION : 'auto',
+				defined( 'R2_UPLOADS_ACCOUNT_ID' ) ? R2_UPLOADS_ACCOUNT_ID : null
 			);
 		}
 
@@ -88,13 +96,22 @@ class Plugin {
 	 * @param ?string $secret
 	 * @param ?string $bucket_url
 	 * @param ?string $region
+	 * @param ?string $account_id
 	 */
-	public function __construct( $bucket, $key, $secret, $bucket_url = null, $region = null ) {
+	public function __construct( $bucket, $key, $secret, $bucket_url = null, $region = null, $account_id = null ) {
 		$this->bucket     = $bucket;
 		$this->key        = $key;
 		$this->secret     = $secret;
-		$this->bucket_url = $bucket_url;
+		$this->bucket_url = $bucket_url !== null ? untrailingslashit( $bucket_url ) : null;
 		$this->region     = $region;
+		$this->account_id = $account_id;
+	}
+
+	private static function get_configured_bucket() : string {
+		$bucket = R2_UPLOADS_BUCKET;
+		$prefix = defined( 'R2_UPLOADS_BUCKET_PATH_PREFIX' ) ? trim( R2_UPLOADS_BUCKET_PATH_PREFIX, '/' ) : '';
+
+		return $prefix !== '' ? $bucket . '/' . $prefix : $bucket;
 	}
 
 	/**
@@ -143,12 +160,10 @@ class Plugin {
 	 * Register the stream wrapper for s3
 	 */
 	public function register_stream_wrapper() : void {
-		if ( defined( 'S3_UPLOADS_USE_LOCAL' ) && S3_UPLOADS_USE_LOCAL ) {
+		if ( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL ) {
 			stream_wrapper_register( 's3', 'S3_Uploads\Local_Stream_Wrapper', STREAM_IS_URL );
 		} else {
 			Stream_Wrapper::register( $this );
-			$acl = defined( 'S3_UPLOADS_OBJECT_ACL' ) ? S3_UPLOADS_OBJECT_ACL : 'public-read';
-			stream_context_set_option( stream_context_get_default(), 's3', 'ACL', $acl );
 		}
 
 		stream_context_set_option( stream_context_get_default(), 's3', 'seekable', true );
@@ -170,24 +185,55 @@ class Plugin {
 	public function filter_upload_dir( array $dirs ) : array {
 
 		$this->original_upload_dir = $dirs;
+		$dirs['subdir'] = $this->get_upload_subdir( $dirs['subdir'] );
 		$s3_path = $this->get_s3_path();
 
-		$dirs['path']    = str_replace( WP_CONTENT_DIR, $s3_path, $dirs['path'] );
-		$dirs['basedir'] = str_replace( WP_CONTENT_DIR, $s3_path, $dirs['basedir'] );
+		$dirs['basedir'] = $s3_path;
+		$dirs['path']    = $s3_path . $dirs['subdir'];
 
-		if ( ! defined( 'S3_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) || ! S3_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) {
+		if ( ! defined( 'R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) || ! R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) {
 
-			if ( defined( 'S3_UPLOADS_USE_LOCAL' ) && S3_UPLOADS_USE_LOCAL ) {
+			if ( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL ) {
 				$dirs['url']     = str_replace( $s3_path, $dirs['baseurl'] . '/s3/' . $this->bucket, $dirs['path'] );
 				$dirs['baseurl'] = str_replace( $s3_path, $dirs['baseurl'] . '/s3/' . $this->bucket, $dirs['basedir'] );
 
 			} else {
-				$dirs['url']     = str_replace( $s3_path, $this->get_s3_url(), $dirs['path'] );
-				$dirs['baseurl'] = str_replace( $s3_path, $this->get_s3_url(), $dirs['basedir'] );
+				$dirs['baseurl'] = $this->get_s3_url();
+				$dirs['url']     = $this->get_s3_url() . $dirs['subdir'];
 			}
 		}
 
 		return $dirs;
+	}
+
+	private function get_upload_subdir( string $subdir ) : string {
+		$parts = [];
+
+		if ( defined( 'R2_UPLOADS_ADD_YEAR_MONTH_TO_BUCKET_PATH' ) ) {
+			if ( R2_UPLOADS_ADD_YEAR_MONTH_TO_BUCKET_PATH ) {
+				$parts[] = current_time( 'Y' );
+				$parts[] = current_time( 'm' );
+			}
+		} elseif ( $subdir !== '' ) {
+			$parts[] = trim( $subdir, '/' );
+		}
+
+		if ( defined( 'R2_UPLOADS_ADD_OBJECT_VERSION_TO_BUCKET_PATH' ) && R2_UPLOADS_ADD_OBJECT_VERSION_TO_BUCKET_PATH ) {
+			$parts[] = (string) $this->get_object_version();
+		}
+
+		$parts = array_filter( array_map( 'trim', $parts ), 'strlen' );
+		return empty( $parts ) ? '' : '/' . implode( '/', $parts );
+	}
+
+	private function get_object_version() : int {
+		static $version = null;
+
+		if ( $version === null ) {
+			$version = time();
+		}
+
+		return $version;
 	}
 
 	/**
@@ -225,14 +271,20 @@ class Plugin {
 	 * @return string
 	 */
 	public function get_s3_url() : string {
-		if ( $this->bucket_url !== null ) {
-			return $this->bucket_url;
-		}
-
 		$bucket = strtok( $this->bucket, '/' );
 		$path   = substr( $this->bucket, strlen( $bucket ) );
 
-		return apply_filters( 's3_uploads_bucket_url', 'https://' . $bucket . '.s3.amazonaws.com' . $path );
+		if ( $this->bucket_url !== null ) {
+			return $this->bucket_url . $path;
+		}
+
+		if ( $this->account_id !== null ) {
+			$jurisdiction = defined( 'R2_UPLOADS_JURISDICTION' ) && R2_UPLOADS_JURISDICTION !== '' ? '.' . R2_UPLOADS_JURISDICTION : '';
+			return 'https://' . $this->get_s3_bucket() . '.' . $this->account_id . $jurisdiction . '.r2.cloudflarestorage.com' . $path;
+		}
+
+		$url = apply_filters( 'r2_uploads_bucket_url', '' );
+		return $url;
 	}
 
 	/**
@@ -342,21 +394,27 @@ class Plugin {
 	 */
 	public function get_aws_sdk() : Aws\Sdk {
 		/** @var null|Aws\Sdk */
-		$sdk = apply_filters( 's3_uploads_aws_sdk', null, $this );
+		$sdk = apply_filters( 'r2_uploads_aws_sdk', null, $this );
 		if ( $sdk ) {
 			return $sdk;
 		}
 
-		$params = [ 'version' => 'latest' ];
+		$params = [
+			'version' => 'latest',
+			'region' => $this->region ?: 'auto',
+			'signature' => 'v4',
+			'request_checksum_calculation' => 'when_required',
+			'response_checksum_validation' => 'when_required',
+		];
+
+		if ( $this->account_id !== null ) {
+			$jurisdiction = defined( 'R2_UPLOADS_JURISDICTION' ) && R2_UPLOADS_JURISDICTION !== '' ? '.' . R2_UPLOADS_JURISDICTION : '';
+			$params['endpoint'] = 'https://' . $this->account_id . $jurisdiction . '.r2.cloudflarestorage.com';
+		}
 
 		if ( $this->key !== null && $this->secret !== null ) {
 			$params['credentials']['key'] = $this->key;
 			$params['credentials']['secret'] = $this->secret;
-		}
-
-		if ( $this->region !== null ) {
-			$params['signature'] = 'v4';
-			$params['region'] = $this->region;
 		}
 
 		if ( defined( 'WP_PROXY_HOST' ) && defined( 'WP_PROXY_PORT' ) ) {
@@ -370,7 +428,7 @@ class Plugin {
 			$params['request.options']['proxy'] = $proxy_auth . $proxy_address;
 		}
 
-		$params = apply_filters( 's3_uploads_s3_client_params', $params );
+		$params = apply_filters( 'r2_uploads_s3_client_params', $params );
 
 		$sdk = new Aws\Sdk( $params );
 		return $sdk;
@@ -460,8 +518,8 @@ class Plugin {
 	 */
 	function wp_filter_resource_hints( array $hints, string $relation_type ) : array {
 		if (
-			( defined( 'S3_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) && S3_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) ||
-			( defined( 'S3_UPLOADS_USE_LOCAL' ) && S3_UPLOADS_USE_LOCAL )
+			( defined( 'R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL' ) && R2_UPLOADS_DISABLE_REPLACE_UPLOAD_URL ) ||
+			( defined( 'R2_UPLOADS_USE_LOCAL' ) && R2_UPLOADS_USE_LOCAL )
 		) {
 			return $hints;
 		}
@@ -501,48 +559,19 @@ class Plugin {
 		 * @param bool Whether the attachment is private.
 		 * @param int  The attachment ID.
 		 */
-		$private = apply_filters( 's3_uploads_is_attachment_private', false, $attachment_id );
+		$private = apply_filters( 'r2_uploads_is_attachment_private', false, $attachment_id );
 		return $private;
 	}
 
 	/**
-	 * Update the ACL (Access Control List) for an attachments files.
+	 * R2 does not support S3 object ACLs.
 	 *
 	 * @param integer $attachment_id
-	 * @param 'public-read'|'private' $acl public-read|private
+	 * @param string $acl Ignored ACL value.
 	 * @return WP_Error|null
 	 */
 	public function set_attachment_files_acl( int $attachment_id, string $acl ) : ?WP_Error {
-		$files = static::get_attachment_files( $attachment_id );
-		$locations = array_map( [ $this, 'get_s3_location_for_path' ], $files );
-		// Remove any null items in the array from get_s3_location_for_path().
-		$locations = array_filter( $locations );
-		$s3 = $this->s3();
-		$commands = [];
-		foreach ( $locations as $location ) {
-			$commands[] = $s3->getCommand( 'putObjectAcl', [
-				'Bucket' => $location['bucket'],
-				'Key' => $location['key'],
-				'ACL' => $acl,
-			] );
-		}
-
-		try {
-			Aws\CommandPool::batch( $s3, $commands );
-		} catch ( Exception $e ) {
-			return new WP_Error( $e->getCode(), $e->getMessage() );
-		}
-
-		/**
-		 * Fires after ACL of files of an attachment is set.
-		 *
-		 * @param int $attachment_id Attachment whose ACL has been changed.
-		 * @param string $acl The new ACL that's been set.
-		 * @psalm-suppress TooManyArguments -- Currently do_action doesn't detect variable number of arguments.
-		 */
-		do_action( 's3_uploads_set_attachment_files_acl', $attachment_id, $acl );
-
-		return null;
+		return new WP_Error( 'r2_uploads_acl_not_supported', 'Cloudflare R2 does not support S3 object ACLs. Use a public custom domain or presigned URLs instead.' );
 	}
 
 	/**
@@ -580,7 +609,7 @@ class Plugin {
 			}
 		}
 
-		$files = apply_filters( 's3_uploads_get_attachment_files', $files, $attachment_id );
+		$files = apply_filters( 'r2_uploads_get_attachment_files', $files, $attachment_id );
 
 		return $files;
 	}
@@ -611,14 +640,9 @@ class Plugin {
 			]
 		);
 
-		$presigned_url_expires = apply_filters( 's3_uploads_private_attachment_url_expiry', '+6 hours', $post_id );
-		$query = $this->s3()->createPresignedRequest( $cmd, $presigned_url_expires )->getUri()->getQuery();
-
-		// The URL could have query params on it already (such as being an already signed URL),
-		// but query params will mean the S3 signed URL will become corrupt. So, we have to
-		// remove all query params.
-		$url = strtok( $url, '?' ) . '?' . $query;
-		$url = apply_filters( 's3_uploads_presigned_url', $url, $post_id );
+		$presigned_url_expires = apply_filters( 'r2_uploads_private_attachment_url_expiry', '+6 hours', $post_id );
+		$url = (string) $this->s3()->createPresignedRequest( $cmd, $presigned_url_expires )->getUri();
+		$url = apply_filters( 'r2_uploads_presigned_url', $url, $post_id );
 
 		return $url;
 	}
@@ -664,10 +688,6 @@ class Plugin {
 	 * @return array
 	 */
 	public function set_attachment_private_on_generate_attachment_metadata( array $metadata, int $attachment_id ) : array {
-		if ( $this->is_private_attachment( $attachment_id ) ) {
-			$this->set_attachment_files_acl( $attachment_id, 'private' );
-		}
-
 		return $metadata;
 	}
 

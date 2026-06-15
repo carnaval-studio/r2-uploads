@@ -1,6 +1,6 @@
 <?php
 
-class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
+class Test_R2_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 	protected $s3 = null;
 
@@ -21,7 +21,7 @@ class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 	public function test_copy_via_stream_wrapper() {
 
 		$local_path = dirname( __FILE__ ) . '/data/sunflower.jpg';
-		$remote_path = 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg';
+		$remote_path = 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg';
 		$result = copy( $local_path, $remote_path );
 		$this->assertTrue( $result );
 		$this->assertEquals( file_get_contents( $local_path ), file_get_contents( $remote_path ) );
@@ -29,28 +29,28 @@ class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 	public function test_rename_via_stream_wrapper() {
 
-		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' );
-		$result = rename( 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg', 's3://' . S3_UPLOADS_BUCKET . '/sunflower-test.jpg' );
+		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' );
+		$result = rename( 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg', 's3://' . R2_UPLOADS_BUCKET . '/sunflower-test.jpg' );
 		$this->assertTrue( $result );
-		$this->assertTrue( file_exists( 's3://' . S3_UPLOADS_BUCKET . '/sunflower-test.jpg' ) );
+		$this->assertTrue( file_exists( 's3://' . R2_UPLOADS_BUCKET . '/sunflower-test.jpg' ) );
 	}
 
 	public function test_unlink_via_stream_wrapper() {
 
-		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' );
-		$result = unlink( 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' );
+		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' );
+		$result = unlink( 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' );
 		$this->assertTrue( $result );
-		$this->assertFalse( file_exists( 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' ) );
+		$this->assertFalse( file_exists( 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' ) );
 	}
 
 	public function test_copy_via_stream_wrapper_fails_on_invalid_permission() {
 
 		stream_wrapper_unregister( 's3' );
 
-		$uploads = new S3_Uploads\Plugin( S3_UPLOADS_BUCKET, S3_UPLOADS_KEY, '123', null, S3_UPLOADS_REGION );
+		$uploads = new S3_Uploads\Plugin( R2_UPLOADS_BUCKET, R2_UPLOADS_KEY, '123', null, R2_UPLOADS_REGION );
 		$uploads->register_stream_wrapper();
 
-		$bucket_root = strtok( S3_UPLOADS_BUCKET, '/' );
+		$bucket_root = strtok( R2_UPLOADS_BUCKET, '/' );
 		$result = @copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . $bucket_root . '/sunflower.jpg' );
 
 		$this->assertFalse( $result );
@@ -58,15 +58,15 @@ class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 	public function test_rename_via_stream_wrapper_fails_on_invalid_permission() {
 
-		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' );
+		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' );
 
 		stream_wrapper_unregister( 's3' );
 
-		$uploads = new S3_Uploads\Plugin( S3_UPLOADS_BUCKET, S3_UPLOADS_KEY, '123', null, S3_UPLOADS_REGION );
+		$uploads = new S3_Uploads\Plugin( R2_UPLOADS_BUCKET, R2_UPLOADS_KEY, '123', null, R2_UPLOADS_REGION );
 		$uploads->register_stream_wrapper();
 
-		$bucket_root = strtok( S3_UPLOADS_BUCKET, '/' );
-		$result = @rename( 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg', 's3://' . $bucket_root . '/sunflower.jpg' );
+		$bucket_root = strtok( R2_UPLOADS_BUCKET, '/' );
+		$result = @rename( 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg', 's3://' . $bucket_root . '/sunflower.jpg' );
 
 		$this->assertFalse( $result );
 	}
@@ -77,7 +77,7 @@ class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 	 */
 	public function test_file_exists_on_dir_does_not_cause_network_activity() {
 
-		$bucket_root = strtok( S3_UPLOADS_BUCKET, '/' );
+		$bucket_root = strtok( R2_UPLOADS_BUCKET, '/' );
 
 		// result would fail as we don't have permission to write here.
 		$result = file_exists( 's3://' . $bucket_root . '/some_dir' );
@@ -88,15 +88,15 @@ class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 	}
 
 	public function get_file_exists_via_stream_wrapper() {
-		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' );
-		$this->assertTrue( file_exists( 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' ) );
-		$this->assertFalse( file_exists( 's3://' . S3_UPLOADS_BUCKET . '/sunflower-missing.jpg' ) );
+		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' );
+		$this->assertTrue( file_exists( 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' ) );
+		$this->assertFalse( file_exists( 's3://' . R2_UPLOADS_BUCKET . '/sunflower-missing.jpg' ) );
 	}
 
 	public function test_getimagesize_via_stream_wrapper() {
 
-		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg' );
-		$file = 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg';
+		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg' );
+		$file = 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg';
 
 		$image = getimagesize( $file );
 
@@ -113,7 +113,7 @@ class Test_S3_Uploads_Stream_Wrapper extends WP_UnitTestCase {
 
 	public function test_stream_wrapper_supports_seeking() {
 
-		$file = 's3://' . S3_UPLOADS_BUCKET . '/sunflower.jpg';
+		$file = 's3://' . R2_UPLOADS_BUCKET . '/sunflower.jpg';
 		copy( dirname( __FILE__ ) . '/data/sunflower.jpg', $file );
 
 		$f = fopen( $file, 'r' );

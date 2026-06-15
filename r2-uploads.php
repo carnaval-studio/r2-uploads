@@ -1,8 +1,8 @@
 <?php
 
 /*
-Plugin Name: S3 Uploads
-Description: Store uploads in S3
+Plugin Name: r2-uploads
+Description: Store uploads in Cloudflare R2
 Author: Human Made Limited
 Version: 3.0.11
 Author URI: https://hmn.md

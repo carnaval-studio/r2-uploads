@@ -307,9 +307,10 @@ class Local_Stream_Wrapper {
 		}
 		$result = fflush( $this->handle );
 
+		$parts = wp_parse_url( $this->getUri() );
 		$params = [
-			'Bucket' => S3_UPLOADS_BUCKET,
-			'Key' => trim( str_replace( S3_UPLOADS_BUCKET, '', $this->getTarget() ), '/' ),
+			'Bucket' => isset( $parts['host'] ) ? $parts['host'] : R2_UPLOADS_BUCKET,
+			'Key' => isset( $parts['path'] ) ? ltrim( $parts['path'], '/' ) : '',
 		];
 
 		/**
@@ -317,7 +318,7 @@ class Local_Stream_Wrapper {
 		 *
 		 * @param array  $params S3Client::putObject parameters.
 		 */
-		do_action( 's3_uploads_putObject', $params );
+		do_action( 'r2_uploads_putObject', $params );
 
 		return $result;
 	}

@@ -1,6 +1,6 @@
 <?php
 
-class Test_S3_Uploads_Image_Editor_Imagick extends WP_UnitTestCase {
+class Test_R2_Uploads_Image_Editor_Imagick extends WP_UnitTestCase {
 
 	protected string $image_path = '';
 
@@ -15,7 +15,7 @@ class Test_S3_Uploads_Image_Editor_Imagick extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_Image_Editor_Imagick test failed' );
 		}
 	}
-	public function test_s3_upload_image_editor_is_present() {
+	public function test_r2_upload_image_editor_is_present() {
 		$editors = apply_filters( 'wp_image_editors', array( 'WP_Image_Editor_Imagick', 'WP_Image_Editor_GD' ) );
 
 		$this->assertFalse( in_array( 'WP_Image_Editor_Imagick', $editors ), 'Imagick editor should be removed from the image editors array.' );

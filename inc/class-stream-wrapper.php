@@ -186,7 +186,8 @@ class Stream_Wrapper {
 						try {
 							$p = $this->params;
 							$p['Body'] = '';
-							$p = apply_filters( 's3_uploads_putObject_params', $p );
+							$p = apply_filters( 'r2_uploads_putObject_params', $p );
+							unset( $p['ACL'], $p['acl'] );
 							$this->getClient()->putObject( $p );
 						} catch ( Exception $e ) {
 							return $this->triggerError( $e->getMessage() );
@@ -230,18 +231,18 @@ class Stream_Wrapper {
 		}
 
 		/// Expires:
-		if ( defined( 'S3_UPLOADS_HTTP_EXPIRES' ) ) {
-			$params['Expires'] = S3_UPLOADS_HTTP_EXPIRES;
+		if ( defined( 'R2_UPLOADS_HTTP_EXPIRES' ) ) {
+			$params['Expires'] = R2_UPLOADS_HTTP_EXPIRES;
 		}
 		// Cache-Control:
-		if ( defined( 'S3_UPLOADS_HTTP_CACHE_CONTROL' ) ) {
+		if ( defined( 'R2_UPLOADS_HTTP_CACHE_CONTROL' ) ) {
 			/**
 			 * @psalm-suppress RedundantCondition
 			 */
-			if ( is_numeric( S3_UPLOADS_HTTP_CACHE_CONTROL ) ) {
-				$params['CacheControl'] = 'max-age=' . S3_UPLOADS_HTTP_CACHE_CONTROL;
+			if ( is_numeric( R2_UPLOADS_HTTP_CACHE_CONTROL ) ) {
+				$params['CacheControl'] = 'max-age=' . R2_UPLOADS_HTTP_CACHE_CONTROL;
 			} else {
-				$params['CacheControl'] = S3_UPLOADS_HTTP_CACHE_CONTROL;
+				$params['CacheControl'] = R2_UPLOADS_HTTP_CACHE_CONTROL;
 			}
 		}
 
@@ -252,7 +253,8 @@ class Stream_Wrapper {
 		 *
 		 * @param array $params S3Client::putObject parameters.
 		 */
-		$params = apply_filters( 's3_uploads_putObject_params', $params );
+		$params = apply_filters( 'r2_uploads_putObject_params', $params );
+		unset( $params['ACL'], $params['acl'] );
 
 		/** @var OptionsArray $params */
 		$this->clearCacheKey( "s3://{$params['Bucket']}/{$params['Key']}" );
@@ -265,7 +267,7 @@ class Stream_Wrapper {
 				 *
 				 * @param array  $params S3Client::putObject parameters.
 				 */
-				do_action( 's3_uploads_putObject', $params );
+				do_action( 'r2_uploads_putObject', $params );
 
 				return $bool;
 			}
@@ -520,10 +522,6 @@ class Stream_Wrapper {
 			return false;
 		}
 
-		if ( ! isset( $params['ACL'] ) ) {
-			$params['ACL'] = $this->determineAcl( $mode );
-		}
-
 		return ( $params['Key'] === null || $params['Key'] === '' )
 			? $this->createBucket( $path, $params )
 			: $this->createSubfolder( $path, $params );
@@ -771,15 +769,13 @@ class Stream_Wrapper {
 		return $this->boolCall(
 			function () use ( $partsFrom, $partsTo ) {
 				$options = $this->getOptions( true );
-				// Copy the object and allow overriding default parameters if
-				// desired, but by default copy metadata
-				$this->getClient()->copy(
-					$partsFrom['Bucket'],
-					$partsFrom['Key'],
-					$partsTo['Bucket'],
-					$partsTo['Key'],
-					isset( $options['acl'] ) ? $options['acl'] : 'private',
-					$options
+				unset( $options['ACL'], $options['acl'] );
+				$this->getClient()->copyObject(
+					[
+						'Bucket' => $partsTo['Bucket'],
+						'Key' => $partsTo['Key'],
+						'CopySource' => $partsFrom['Bucket'] . '/' . $partsFrom['Key'],
+					] + $options
 				);
 				// Delete the original object
 				$this->getClient()->deleteObject(
@@ -1116,24 +1112,6 @@ class Stream_Wrapper {
 		return $result['CommonPrefixes']
 			? $this->triggerError( 'Subfolder contains nested folders' )
 			: true;
-	}
-
-	/**
-	 * Determine the most appropriate ACL based on a file mode.
-	 *
-	 * @param int $mode File mode
-	 *
-	 * @return 'public-read'|'authenticated-read'|'private'
-	 */
-	private function determineAcl( int $mode ) : string {
-		switch ( substr( decoct( $mode ), 0, 1 ) ) {
-			case '7':
-				return 'public-read';
-			case '6':
-				return 'authenticated-read';
-			default:
-				return 'private';
-		}
 	}
 
 	/**
