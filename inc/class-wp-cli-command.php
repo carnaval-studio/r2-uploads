@@ -25,14 +25,17 @@ class WP_CLI_Command extends \WP_CLI_Command {
 		// Create a path in the base directory, with a random file name to avoid potentially overwriting existing data.
 		$upload_dir = wp_upload_dir();
 		$s3_path = $upload_dir['basedir'] . '/' . wp_rand() . '.txt';
+		$verify_file = wp_tempnam( 'r2-uploads-verify.txt' );
+		file_put_contents( $verify_file, 'r2-uploads verify ' . gmdate( 'c' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 		// Attempt to copy the local test file to the generated path on R2.
 		WP_CLI::print_value( 'Attempting to upload file ' . $s3_path );
 
 		$copy = copy(
-			dirname( dirname( __FILE__ ) ) . '/verify.txt',
+			$verify_file,
 			$s3_path
 		);
+		unlink( $verify_file );
 
 		// Check that the copy worked.
 		if ( ! $copy ) {
