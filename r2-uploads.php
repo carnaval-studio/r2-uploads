@@ -4,7 +4,7 @@
  * Plugin Name: R2 Uploads
  * Plugin URI: https://github.com/carnaval-studio/r2-uploads
  * Description: Store uploads in Cloudflare R2.
- * Version: 3.0.19
+ * Version: 3.0.20
  * Requires at least: 5.3
  * Requires PHP: 8.3
  * Author: Carnaval Studio
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define('R2_UPLOADS_VERSION', '3.0.19');
+define('R2_UPLOADS_VERSION', '3.0.20');
 define( 'R2_UPLOADS_FILE', __FILE__ );
 define( 'R2_UPLOADS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'R2_UPLOADS_URL', plugin_dir_url( __FILE__ ) );
