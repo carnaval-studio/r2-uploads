@@ -1,6 +1,6 @@
 {
     "name": "r2-uploads",
-    "version": "3.0.13",
+    "version": "3.0.14",
     "private": true,
     "description": "WordPress plugin for storing uploads in Cloudflare R2.",
     "scripts": {
