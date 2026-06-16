@@ -1,0 +1,12 @@
+{
+	"name": "r2-uploads",
+	"version": "3.0.11",
+	"private": true,
+	"description": "WordPress plugin for storing uploads in Cloudflare R2.",
+	"scripts": {
+		"build": "bash scripts/build.sh",
+		"release": "bash scripts/release.sh"
+	},
+	"author": "Carnaval Studio",
+	"license": "GPL-2.0-or-later"
+}

@@ -8,10 +8,38 @@ This fork is R2-first. It uses Cloudflare R2's S3-compatible API for object oper
 
 - PHP >= 8.0
 - WordPress >= 5.3
-- Composer autoloader loaded before WordPress loads plugins
+- Plugin dependencies installed or bundled with the plugin
 - Cloudflare R2 bucket
 - Cloudflare R2 API token with Object Read & Write access scoped to the bucket
 - A custom domain connected to the R2 bucket for production public media URLs
+
+## Installation
+
+Download the latest release ZIP from GitHub and install it through **Plugins > Add New > Upload Plugin**:
+
+```text
+https://github.com/carnaval-studio/r2-uploads/releases/latest/download/r2-uploads.zip
+```
+
+Release builds bundle the `vendor/` directory, so the plugin works without a site-level Composer autoloader.
+
+### From source
+
+Install dependencies inside the plugin directory:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+### Updates
+
+The plugin checks GitHub releases automatically through WordPress. New versions appear in **Dashboard > Updates** without a license key because the repository is public.
+
+If you hit GitHub API rate limits, define a token in `wp-config.php`:
+
+```php
+define( 'R2_UPLOADS_GITHUB_TOKEN', 'ghp_xxxxxxxxxxxxxxxxxxxx' );
+```
 
 ## Configuration
 

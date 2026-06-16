@@ -1,7 +1,7 @@
 {
 	"name": "r2-uploads/r2-uploads",
 	"description": "WordPress plugin to store uploads on Cloudflare R2",
-	"homepage": "https://github.com/r2-uploads/r2-uploads",
+	"homepage": "https://github.com/carnaval-studio/r2-uploads",
 	"keywords": [
 		"wordpress"
 	],
@@ -11,13 +11,13 @@
 	},
 	"authors": [
 		{
-			"name": "Human Made",
-			"homepage": "https://humanmade.com/"
+			"name": "Carnaval Studio",
+			"homepage": "https://github.com/carnaval-studio"
 		}
 	],
 	"support": {
-			"issues": "https://github.com/r2-uploads/r2-uploads/issues",
-			"source": "https://github.com/r2-uploads/r2-uploads"
+			"issues": "https://github.com/carnaval-studio/r2-uploads/issues",
+			"source": "https://github.com/carnaval-studio/r2-uploads"
 	},
 	"type": "wordpress-plugin",
 	"require": {
