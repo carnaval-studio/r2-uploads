@@ -2,7 +2,7 @@
 
 WordPress plugin for storing uploads in Cloudflare R2.
 
-This fork is R2-first. It uses Cloudflare R2's S3-compatible API for object operations, but public delivery is designed around an R2 custom domain.
+This project is a fork of [humanmade/S3-Uploads](https://github.com/humanmade/S3-Uploads), adapted to be R2-first. It uses Cloudflare R2's S3-compatible API for object operations, but public delivery is designed around an R2 custom domain.
 
 ## Requirements
 
