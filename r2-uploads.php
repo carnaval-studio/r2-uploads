@@ -6,7 +6,7 @@
  * Description: Store uploads in Cloudflare R2.
  * Version: 3.0.19
  * Requires at least: 5.3
- * Requires PHP: 8.0
+ * Requires PHP: 8.3
  * Author: Carnaval Studio
  * Author URI: https://github.com/carnaval-studio
  * License: GPL-2.0-or-later

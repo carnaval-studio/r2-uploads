@@ -51,7 +51,7 @@ function init() : void {
 function check_requirements() : bool {
 	global $wp_version;
 
-	if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
+	if ( version_compare( PHP_VERSION, '8.3', '<' ) ) {
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
 			add_action( 'admin_notices', __NAMESPACE__ . '\\outdated_php_version_notice', 10, 0 );
 		}
@@ -85,7 +85,7 @@ function check_requirements() : bool {
  */
 function outdated_php_version_notice() : void {
 	printf(
-		'<div class="error"><p>The R2 Uploads plugin requires PHP version 8.0 or higher. Your server is running PHP version %s.</p></div>',
+		'<div class="error"><p>The R2 Uploads plugin requires PHP version 8.3 or higher. Your server is running PHP version %s.</p></div>',
 		PHP_VERSION
 	);
 }

@@ -88,7 +88,7 @@ final class GitHub_Updater {
 			'package' => $release['package'],
 			'tested' => $this->get_tested_wp_version(),
 			'requires' => '5.3',
-			'requires_php' => '8.0',
+			'requires_php' => '8.3',
 		];
 	}
 
@@ -113,7 +113,7 @@ final class GitHub_Updater {
 			'author' => 'Carnaval Studio',
 			'homepage' => $this->plugin_url,
 			'requires' => '5.3',
-			'requires_php' => '8.0',
+			'requires_php' => '8.3',
 			'tested' => $this->get_tested_wp_version(),
 			'sections' => [
 				'description' => 'WordPress plugin for storing uploads in Cloudflare R2.',
