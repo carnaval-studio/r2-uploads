@@ -34,6 +34,12 @@ function init() : void {
 	$instance = Plugin::get_instance();
 	$instance->setup();
 
+	// Strip crossorigin="anonymous" from admin media images when the public URL domain
+	// differs from the admin domain. WordPress adds crossorigin to external images so it
+	// can use them with canvas; without CORS headers on the public domain those images
+	// fail to load in the media grid.
+	add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\maybe_enqueue_admin_crossorigin_script' );
+
 	// Add filters to "wrap" the wp_privacy_personal_data_export_file function call as we need to
 	// switch out the personal_data directory to a local temp folder, and then upload after it's
 	// complete, as Core tries to write directly to the ZipArchive which won't work with the
@@ -197,4 +203,42 @@ function move_temp_personal_data_to_s3( string $archive_pathname ) : void {
 	$destination = $exports_dir . pathinfo( $archive_pathname, PATHINFO_FILENAME ) . '.' . pathinfo( $archive_pathname, PATHINFO_EXTENSION );
 	copy( $archive_pathname, $destination );
 	unlink( $archive_pathname );
+}
+
+/**
+ * Enqueue a small admin script that strips crossorigin="anonymous" from images.
+ *
+ * This works around CORS failures in the WordPress media library when attachments
+ * are served from a different domain than the admin. The script only loads when
+ * R2 Uploads is active, a custom public URL is configured, and the admin domain
+ * differs from that public URL domain.
+ */
+function maybe_enqueue_admin_crossorigin_script() : void {
+	if ( ! is_admin() ) {
+		return;
+	}
+
+	if ( defined( 'R2_UPLOADS_DISABLE_ADMIN_CROSSORIGIN' ) && R2_UPLOADS_DISABLE_ADMIN_CROSSORIGIN ) {
+		return;
+	}
+
+	if ( ! defined( 'R2_UPLOADS_PUBLIC_URL' ) || R2_UPLOADS_PUBLIC_URL === '' ) {
+		return;
+	}
+
+	$public_host = wp_parse_url( untrailingslashit( R2_UPLOADS_PUBLIC_URL ), PHP_URL_HOST );
+	$admin_host  = wp_parse_url( admin_url(), PHP_URL_HOST );
+
+	if ( ! $public_host || ! $admin_host || strtolower( $public_host ) === strtolower( $admin_host ) ) {
+		return;
+	}
+
+	$plugin_url = plugin_dir_url( R2_UPLOADS_FILE );
+	wp_enqueue_script(
+		'r2-uploads-admin-media-crossorigin',
+		$plugin_url . 'assets/js/admin-media-crossorigin.js',
+		[],
+		R2_UPLOADS_VERSION,
+		true
+	);
 }
