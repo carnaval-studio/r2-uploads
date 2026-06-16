@@ -1,4 +1,4 @@
-# r2-uploads
+# R2 Uploads
 
 WordPress plugin for storing uploads in Cloudflare R2.
 
