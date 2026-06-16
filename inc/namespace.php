@@ -14,10 +14,12 @@ function init() : void {
 	}
 
 	if ( ! defined( 'R2_UPLOADS_BUCKET' ) ) {
+		add_action( 'admin_notices', __NAMESPACE__ . '\\missing_config_notice' );
 		return;
 	}
 
 	if ( ! defined( 'R2_UPLOADS_ACCOUNT_ID' ) || ! defined( 'R2_UPLOADS_KEY' ) || ! defined( 'R2_UPLOADS_SECRET' ) ) {
+		add_action( 'admin_notices', __NAMESPACE__ . '\\missing_config_notice' );
 		return;
 	}
 
@@ -49,7 +51,7 @@ function init() : void {
 function check_requirements() : bool {
 	global $wp_version;
 
-	if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
+	if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
 			add_action( 'admin_notices', __NAMESPACE__ . '\\outdated_php_version_notice', 10, 0 );
 		}
@@ -83,8 +85,18 @@ function check_requirements() : bool {
  */
 function outdated_php_version_notice() : void {
 	printf(
-		'<div class="error"><p>The R2 Uploads plugin requires PHP version 7.4 or higher. Your server is running PHP version %s.</p></div>',
+		'<div class="error"><p>The R2 Uploads plugin requires PHP version 8.0 or higher. Your server is running PHP version %s.</p></div>',
 		PHP_VERSION
+	);
+}
+
+/**
+ * Print an admin notice when required configuration constants are missing.
+ */
+function missing_config_notice() : void {
+	printf(
+		'<div class="error"><p>%s</p></div>',
+		esc_html__( 'R2 Uploads is not active because required constants are missing. Define R2_UPLOADS_BUCKET, R2_UPLOADS_ACCOUNT_ID, R2_UPLOADS_KEY and R2_UPLOADS_SECRET in wp-config.php.', 'r2-uploads' )
 	);
 }
 

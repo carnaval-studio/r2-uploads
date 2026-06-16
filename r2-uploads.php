@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define('R2_UPLOADS_VERSION', '3.0.18');
+define( 'R2_UPLOADS_VERSION', '3.0.18' );
 define( 'R2_UPLOADS_FILE', __FILE__ );
 define( 'R2_UPLOADS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'R2_UPLOADS_URL', plugin_dir_url( __FILE__ ) );
@@ -33,6 +33,15 @@ require_once __DIR__ . '/inc/namespace.php';
 require_once __DIR__ . '/inc/class-github-updater.php';
 
 add_action( 'plugins_loaded', 'R2_Uploads\\init', 0, 0 );
+
+// Clean up hooks when the plugin is deactivated.
+register_deactivation_hook( R2_UPLOADS_FILE, static function () : void {
+	$instance = R2_Uploads\Plugin::get_instance();
+	if ( $instance ) {
+		$instance->tear_down();
+	}
+	delete_option( 'r2_uploads_enabled' );
+} );
 
 // Enable GitHub release-based updates for public repositories.
 add_action( 'plugins_loaded', static function () : void {
