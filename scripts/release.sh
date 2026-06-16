@@ -134,6 +134,7 @@ git push origin HEAD
 
 printf 'Creating GitHub release %s...\n' "$NEW_VERSION"
 if ! gh release create "v$NEW_VERSION" \
+	--repo carnaval-studio/r2-uploads \
 	--title "v$NEW_VERSION" \
 	--notes "Release v$NEW_VERSION" \
 	"$ZIP_FILE" \
