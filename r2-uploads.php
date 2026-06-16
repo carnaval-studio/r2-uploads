@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: r2-uploads
+ * Plugin Name: R2 Uploads
  * Plugin URI: https://github.com/carnaval-studio/r2-uploads
  * Description: Store uploads in Cloudflare R2.
  * Version: 3.0.11

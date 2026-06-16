@@ -1,4 +1,22 @@
+#!/usr/bin/env bash
+# tests/run-tests.sh - Run the full test suite.
+#
+# By default this script uses Docker to spin up MinIO and the WordPress test
+# environment. If Docker is not available, it falls back to the local runner
+# (tests/run-tests-local.sh) which requires a configured wp-tests-config.php.
+
 set -e
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "${NO_DOCKER:-}" == "1" ]] || ! command -v docker >/dev/null 2>&1; then
+	if [[ "${NO_DOCKER:-}" == "1" ]]; then
+		printf 'NO_DOCKER=1 set; running tests locally.\n'
+	else
+		printf 'Docker not found; falling back to local test runner.\n'
+	fi
+	exec "$ROOT_DIR/tests/run-tests-local.sh" "$@"
+fi
 
 if [ -d "/tmp/r2-uploads-tests" ]; then
 	rm -rf /tmp/r2-uploads-tests/*

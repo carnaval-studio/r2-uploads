@@ -4,3 +4,5 @@
 vendor/
 build/
 dist/
+tests/wp-tests-config.php
+.phpunit.result.cache

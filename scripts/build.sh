@@ -43,7 +43,37 @@ rsync -a "$ROOT_DIR/" "$PACKAGE_DIR/" \
 	--exclude='.phpcs.xml.dist' \
 	--exclude='psalm' \
 	--exclude='.gitignore' \
-	--exclude='.gitattributes'
+	--exclude='.gitattributes' \
+	--exclude='*.md' \
+	--exclude='CHANGELOG*' \
+	--exclude='UPGRADING*' \
+	--exclude='SECURITY*' \
+	--exclude='CODE_OF_CONDUCT*' \
+	--exclude='CONTRIBUTING*' \
+	--exclude='TODO*' \
+	--exclude='LICENSE*' \
+	--exclude='vendor/bin' \
+	--exclude='vendor/aws/aws-sdk-php/.changes' \
+	--exclude='vendor/aws/aws-sdk-php/CHANGELOG*' \
+	--exclude='vendor/aws/aws-sdk-php/CONTRIBUTING*' \
+	--exclude='vendor/aws/aws-sdk-php/UPGRADING*' \
+	--exclude='vendor/aws/aws-sdk-php/LICENSE*' \
+	--exclude='vendor/aws/aws-sdk-php/NOTICE*'
+
+# Strip AWS SDK data for services other than S3 to reduce release size.
+# The manifest, aliases, partitions and endpoints files are required for S3
+# client initialization; everything else under src/data/ is service-specific.
+AWS_DATA_DIR="$PACKAGE_DIR/vendor/aws/aws-sdk-php/src/data"
+if [[ -d "$AWS_DATA_DIR" ]]; then
+	find "$AWS_DATA_DIR" -mindepth 1 -maxdepth 1 \
+		! -name 's3' \
+		! -name 'manifest.json.php' \
+		! -name 'aliases.json.php' \
+		! -name 'partitions.json.php' \
+		! -name 'endpoints.json.php' \
+		! -name 'endpoints_prefix_history.json.php' \
+		-exec rm -rf {} +
+fi
 
 (cd "$BUILD_DIR" && zip -qr "$ZIP_FILE" "$PLUGIN_SLUG")
 cp "$ZIP_FILE" "$LATEST_ZIP_FILE"

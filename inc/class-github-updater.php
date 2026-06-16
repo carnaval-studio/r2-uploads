@@ -7,7 +7,7 @@ namespace R2_Uploads;
  *
  * Uses the public GitHub releases API to detect new versions and serves the
  * release ZIP asset as the update package. Works without authentication for
- * public repositories; an optional token can be provided to raise rate limits.
+ * public repositories; an optional token can be provided to raise API rate limits.
  */
 final class GitHub_Updater {
 
@@ -107,7 +107,7 @@ final class GitHub_Updater {
 		}
 
 		return (object) [
-			'name' => 'r2-uploads',
+			'name' => 'R2 Uploads',
 			'slug' => $this->plugin_slug,
 			'version' => $release['version'],
 			'author' => 'Carnaval Studio',
@@ -190,7 +190,7 @@ final class GitHub_Updater {
 
 		printf(
 			'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
-			esc_html__( 'r2-uploads GitHub updates are disabled because the plugin header is missing Plugin URI, Version, or Update URI.', 'r2-uploads' )
+			esc_html__( 'R2 Uploads GitHub updates are disabled because the plugin header is missing Plugin URI, Version, or Update URI.', 'r2-uploads' )
 		);
 	}
 

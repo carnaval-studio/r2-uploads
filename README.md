@@ -35,11 +35,18 @@ composer install --no-dev --optimize-autoloader
 
 The plugin checks GitHub releases automatically through WordPress. New versions appear in **Dashboard > Updates** without a license key because the repository is public.
 
-If you hit GitHub API rate limits, define a token in `wp-config.php`:
+If you hit GitHub API rate limits on shared hosting, define a token in `wp-config.php`:
 
 ```php
 define( 'R2_UPLOADS_GITHUB_TOKEN', 'ghp_xxxxxxxxxxxxxxxxxxxx' );
 ```
+
+Because the repository is public, the token only needs **read access to public repositories**:
+
+- **Classic token**: create a token with **no scopes selected**. Public repository data is readable without any scopes.
+- **Fine-grained token**: grant **Contents: Read-only** on `carnaval-studio/r2-uploads`.
+
+The token is used only for the GitHub Releases API; it is never sent to the download URL of the release ZIP.
 
 ## Configuration
 
