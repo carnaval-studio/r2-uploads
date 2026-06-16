@@ -162,7 +162,16 @@ final class GitHub_Updater {
 		}
 
 		$target = trailingslashit( $local_destination ) . $this->plugin_dir;
-		if ( $destination === $target || ! function_exists( 'move_dir' ) ) {
+		if ( ! function_exists( 'move_dir' ) ) {
+			return $result;
+		}
+
+		// Avoid deleting the target if WordPress already extracted to the
+		// correct directory (paths may differ only by trailing slash).
+		if ( untrailingslashit( $destination ) === untrailingslashit( $target ) ) {
+			$result['destination'] = $target;
+			$result['destination_name'] = $this->plugin_dir;
+			$result['remote_destination'] = $target;
 			return $result;
 		}
 
