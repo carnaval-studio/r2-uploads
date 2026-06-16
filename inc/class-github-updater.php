@@ -146,12 +146,12 @@ final class GitHub_Updater {
 	}
 
 	/**
-	 * @param array<string,mixed> $result
-	 * @param array<string,mixed> $hook_extra
-	 * @return array<string,mixed>
+	 * @param array<string,mixed>|WP_Error $result
+	 * @param array<string,mixed>          $hook_extra
+	 * @return array<string,mixed>|WP_Error
 	 */
-	public function normalize_installed_directory( array $result, array $hook_extra ) : array {
-		if ( ( $hook_extra['plugin'] ?? '' ) !== $this->plugin_file ) {
+	public function normalize_installed_directory( $result, array $hook_extra ) {
+		if ( is_wp_error( $result ) || ( $hook_extra['plugin'] ?? '' ) !== $this->plugin_file ) {
 			return $result;
 		}
 
