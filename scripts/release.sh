@@ -88,7 +88,7 @@ $contents = preg_replace_callback(
 	1
 );
 $contents = preg_replace(
-	"/define\\(\\x27R2_UPLOADS_VERSION\\x27, \\x27[^\\x27]+\\x27\\);/",
+	"/define\\(\\s*\x27R2_UPLOADS_VERSION\x27\\s*,\\s*\x27[^\x27]+\x27\\s*\\);/",
 	"define(" . chr(39) . "R2_UPLOADS_VERSION" . chr(39) . ", " . chr(39) . $version . chr(39) . ");",
 	$contents,
 	1

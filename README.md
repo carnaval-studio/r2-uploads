@@ -15,25 +15,19 @@ This fork is R2-first. It uses Cloudflare R2's S3-compatible API for object oper
 
 ## Installation
 
-Download the latest release ZIP from GitHub and install it through **Plugins > Add New > Upload Plugin**:
+1. Download the latest release ZIP from GitHub:
 
-```text
-https://github.com/carnaval-studio/r2-uploads/releases/latest/download/r2-uploads.zip
-```
+   ```text
+   https://github.com/carnaval-studio/r2-uploads/releases/latest/download/r2-uploads.zip
+   ```
+
+2. Install it through **Plugins > Add New > Upload Plugin**.
 
 Release builds bundle the `vendor/` directory, so the plugin works without a site-level Composer autoloader.
 
-### From source
-
-Install dependencies inside the plugin directory:
-
-```bash
-composer install --no-dev --optimize-autoloader
-```
-
 ### Updates
 
-The plugin checks GitHub releases automatically through WordPress. New versions appear in **Dashboard > Updates** without a license key because the repository is public.
+Once installed, R2 Uploads checks GitHub releases automatically. New versions appear in **Dashboard > Updates**, just like plugins from the WordPress.org directory. No license key is required because the repository is public.
 
 If you hit GitHub API rate limits on shared hosting, define a token in `wp-config.php`:
 
@@ -47,6 +41,14 @@ Because the repository is public, the token only needs **read access to public r
 - **Fine-grained token**: grant **Contents: Read-only** on `carnaval-studio/r2-uploads`.
 
 The token is used only for the GitHub Releases API; it is never sent to the download URL of the release ZIP.
+
+### From source
+
+Install dependencies inside the plugin directory:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
 
 ## Configuration
 
