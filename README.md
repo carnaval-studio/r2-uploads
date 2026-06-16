@@ -6,7 +6,7 @@ This fork is R2-first. It uses Cloudflare R2's S3-compatible API for object oper
 
 ## Requirements
 
-- PHP >= 8.0
+- PHP >= 8.3
 - WordPress >= 5.3
 - Plugin dependencies installed or bundled with the plugin
 - Cloudflare R2 bucket
@@ -107,6 +107,18 @@ If `R2_UPLOADS_ADD_YEAR_MONTH_TO_BUCKET_PATH` is not defined, WordPress' native 
 ```php
 define( 'R2_UPLOADS_HTTP_CACHE_CONTROL', 'public, max-age=31536000, immutable' );
 define( 'R2_UPLOADS_HTTP_EXPIRES', gmdate( 'D, d M Y H:i:s', time() + YEAR_IN_SECONDS ) . ' GMT' );
+```
+
+## Admin Media Library CORS Workaround
+
+WordPress adds `crossorigin="anonymous"` to images in the admin media library when they are served from a different origin than the admin. If the public domain does not send `Access-Control-Allow-Origin` headers, those images fail to load in the media grid.
+
+R2 Uploads automatically strips the attribute in the admin when `R2_UPLOADS_PUBLIC_URL` points to a different host than the admin. This lets the images load without requiring CORS headers on the public domain.
+
+To disable this behavior (for example, when CORS is already configured on the public domain):
+
+```php
+define( 'R2_UPLOADS_DISABLE_ADMIN_CROSSORIGIN', true );
 ```
 
 ## WP-CLI
