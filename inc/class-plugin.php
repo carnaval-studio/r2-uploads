@@ -67,6 +67,19 @@ class Plugin {
 	private static $instance = null;
 
 	/**
+	 * Whether an instance has already been created.
+	 *
+	 * Unlike get_instance(), this never constructs a new instance, so it is safe
+	 * to call when the plugin configuration may be missing (for example during
+	 * deactivation).
+	 *
+	 * @return bool
+	 */
+	public static function has_instance() : bool {
+		return self::$instance !== null;
+	}
+
+	/**
 	 *
 	 * @return static
 	 */
@@ -139,7 +152,9 @@ class Plugin {
 	 */
 	public function tear_down() : void {
 
-		stream_wrapper_unregister( 's3' );
+		if ( in_array( 's3', stream_get_wrappers(), true ) ) {
+			stream_wrapper_unregister( 's3' );
+		}
 		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ] );
 		remove_filter( 'wp_image_editors', [ $this, 'filter_editors' ], 9 );
 		remove_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_sideload_move_temp_file_to_s3' ] );

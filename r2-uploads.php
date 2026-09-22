@@ -36,9 +36,11 @@ add_action( 'plugins_loaded', 'R2_Uploads\\init', 0, 0 );
 
 // Clean up hooks when the plugin is deactivated.
 register_deactivation_hook( R2_UPLOADS_FILE, static function () : void {
-	$instance = R2_Uploads\Plugin::get_instance();
-	if ( $instance ) {
-		$instance->tear_down();
+	// Only tear down when the plugin was actually set up in this request. The
+	// configuration constants may be missing, in which case no instance exists and
+	// instantiating one here would throw an undefined constant error.
+	if ( R2_Uploads\Plugin::has_instance() ) {
+		R2_Uploads\Plugin::get_instance()->tear_down();
 	}
 	delete_option( 'r2_uploads_enabled' );
 } );
