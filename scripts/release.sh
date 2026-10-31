@@ -77,6 +77,22 @@ fi
 BRANCH=$(git branch --show-current)
 [[ "$BRANCH" == "master" ]] || { printf 'Error: run releases from master (current: %s).\n' "$BRANCH" >&2; exit 1; }
 
+NOTES_SCRIPT="$ROOT_DIR/scripts/release-notes.sh"
+NOTES_FILE="$ROOT_DIR/scripts/release-notes/$NEW_VERSION.md"
+if [[ ! -x "$NOTES_SCRIPT" ]]; then
+	printf 'Error: %s not found or not executable.\n' "$NOTES_SCRIPT" >&2
+	exit 1
+fi
+NOTES_STATUS=0
+"$NOTES_SCRIPT" "$NEW_VERSION" || NOTES_STATUS=$?
+if [[ "$NOTES_STATUS" -eq 10 ]]; then
+	printf 'Release stopped: review and complete the draft release notes, commit them, then run the release again.\n' >&2
+	exit 1
+fi
+if [[ "$NOTES_STATUS" -ne 0 ]]; then
+	exit "$NOTES_STATUS"
+fi
+
 php -r '
 $file = $argv[1];
 $version = $argv[2];
@@ -136,7 +152,7 @@ printf 'Creating GitHub release %s...\n' "$NEW_VERSION"
 if ! gh release create "v$NEW_VERSION" \
 	--repo carnaval-studio/r2-uploads \
 	--title "v$NEW_VERSION" \
-	--notes "Release v$NEW_VERSION" \
+	--notes-file "$NOTES_FILE" \
 	"$ZIP_FILE" \
 	"$STABLE_ZIP_FILE"; then
 	printf 'Error: failed to create GitHub release.\n' >&2
