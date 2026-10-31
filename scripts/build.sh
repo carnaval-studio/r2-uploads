@@ -78,6 +78,13 @@ fi
 (cd "$BUILD_DIR" && zip -qr "$ZIP_FILE" "$PLUGIN_SLUG")
 cp "$ZIP_FILE" "$LATEST_ZIP_FILE"
 cp "$ZIP_FILE" "$STABLE_ZIP_FILE"
+
+ENTRIES="$(unzip -Z1 "$ZIP_FILE")"
+if grep -Eq '(^|/)(scripts|tests|node_modules|package\.json|package-lock\.json|release-notes)(/|$)' <<< "$ENTRIES"; then
+	printf 'Error: release ZIP contains development-only files.\n' >&2
+	exit 1
+fi
+
 shasum -a 256 "$ZIP_FILE" > "$ZIP_FILE.sha256"
 shasum -a 256 "$LATEST_ZIP_FILE" > "$LATEST_ZIP_FILE.sha256"
 shasum -a 256 "$STABLE_ZIP_FILE" > "$STABLE_ZIP_FILE.sha256"
